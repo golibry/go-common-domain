@@ -148,11 +148,11 @@ func (s *FullNameTestSuite) TestEquals() {
 
 	// Same values
 	name2, _ := NewFullName("John", "William", "Doe")
-	s.True(name1.Equals(*name2))
+	s.True(name1.Equals(name2))
 
 	// Different values
 	name3, _ := NewFullName("Jane", "William", "Doe")
-	s.False(name1.Equals(*name3))
+	s.False(name1.Equals(name3))
 }
 
 // TestString tests the String method
@@ -169,18 +169,17 @@ func (s *FullNameTestSuite) TestJSONSerialization() {
 	name, _ := NewFullName("John", "William", "Doe")
 
 	jsonData, _ := json.Marshal(name)
-	var unmarshalledName FullName
-	_ = json.Unmarshal(jsonData, &unmarshalledName)
+	unmarshalledName, _ := NewFullNameFromJSON(jsonData)
 
 	s.True(name.Equals(unmarshalledName))
 }
 
-// TestReconstitute tests the Reconstitute function
+// TestReconstitute tests the ReconstituteFullName function
 func (s *FullNameTestSuite) TestReconstitute() {
 	firstname := "John"
 	lastName := "William"
 	middleName := "Doe"
-	fullName := Reconstitute(firstname, middleName, lastName)
+	fullName := ReconstituteFullName(firstname, middleName, lastName)
 
 	s.NotNil(fullName)
 	s.Equal(firstname, fullName.FirstName())

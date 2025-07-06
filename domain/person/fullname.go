@@ -23,28 +23,59 @@ type FullName struct {
 	lastName   string
 }
 
+type fullNameJSON struct {
+	FirstName  string `json:"firstName"`
+	MiddleName string `json:"middleName"`
+	LastName   string `json:"lastName"`
+}
+
 // NewFullName creates a new instance of FullName
-func NewFullName(firstName, middleName, lastName string) (*FullName, error) {
+func NewFullName(firstName, middleName, lastName string) (FullName, error) {
 	normalizedFirst, err := NormalizeNamePart(firstName)
 	if err != nil {
-		return nil, fmt.Errorf("%w (first name)", err)
+		return FullName{}, fmt.Errorf("%w (first name)", err)
 	}
 
 	normalizedMiddle, err := NormalizeNamePart(middleName)
 	if err != nil && !errors.Is(err, ErrEmptyNamePart) {
-		return nil, fmt.Errorf("%w (middle name)", err)
+		return FullName{}, fmt.Errorf("%w (middle name)", err)
 	}
 
 	normalizedLast, err := NormalizeNamePart(lastName)
 	if err != nil {
-		return nil, fmt.Errorf("%w (last name)", err)
+		return FullName{}, fmt.Errorf("%w (last name)", err)
 	}
 
-	return &FullName{
+	return FullName{
 		firstName:  normalizedFirst,
 		middleName: normalizedMiddle,
 		lastName:   normalizedLast,
 	}, nil
+}
+
+// ReconstituteFullName creates a new FullName instance without validation or normalization
+func ReconstituteFullName(firstName, middleName, lastName string) FullName {
+	return FullName{
+		firstName:  firstName,
+		middleName: middleName,
+		lastName:   lastName,
+	}
+}
+
+// NewFullNameFromJSON creates FullName from JSON bytes array
+func NewFullNameFromJSON(data []byte) (FullName, error) {
+	var temp fullNameJSON
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return FullName{}, err
+	}
+
+	newFullName, err := NewFullName(temp.FirstName, temp.MiddleName, temp.LastName)
+	if err != nil {
+		return FullName{}, err
+	}
+
+	return newFullName, nil
 }
 
 // FirstName returns the first name
@@ -60,15 +91,6 @@ func (f FullName) MiddleName() string {
 // LastName returns the last name
 func (f FullName) LastName() string {
 	return f.lastName
-}
-
-// Reconstitute creates a new FullName instance without validation or normalization
-func Reconstitute(firstName, middleName, lastName string) FullName {
-	return FullName{
-		firstName:  firstName,
-		middleName: middleName,
-		lastName:   lastName,
-	}
 }
 
 // Equals compares two FullName objects for equality
@@ -89,37 +111,12 @@ func (f FullName) String() string {
 // MarshalJSON implements json.Marshaler
 func (f FullName) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
-		struct {
-			FirstName  string `json:"firstName"`
-			MiddleName string `json:"middleName,omitempty"`
-			LastName   string `json:"lastName"`
-		}{
+		fullNameJSON{
 			FirstName:  f.firstName,
 			MiddleName: f.middleName,
 			LastName:   f.lastName,
 		},
 	)
-}
-
-// UnmarshalJSON implements json.Unmarshaler
-func (f *FullName) UnmarshalJSON(data []byte) error {
-	var temp struct {
-		FirstName  string `json:"firstName"`
-		MiddleName string `json:"middleName"`
-		LastName   string `json:"lastName"`
-	}
-
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
-	}
-
-	newFullName, err := NewFullName(temp.FirstName, temp.MiddleName, temp.LastName)
-	if err != nil {
-		return err
-	}
-
-	*f = *newFullName
-	return nil
 }
 
 func NormalizeNamePart(namePart string) (string, error) {
