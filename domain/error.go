@@ -6,6 +6,7 @@ package domain
 import "fmt"
 
 // Error represents a domain-specific error in the system.
+// It's advised that all domain layer errors "inherit" from this type.
 type Error struct {
 	prevErr error
 	msg     string // internal error message
