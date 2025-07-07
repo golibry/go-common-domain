@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golibry/go-common-domain/domain"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -12,9 +13,9 @@ import (
 const MaxNamePartLength = 128
 
 var (
-	ErrEmptyNamePart        = errors.New("name part cannot be empty")
-	ErrInvalidNamePartChars = errors.New("name part contains invalid characters")
-	ErrTooLongNamePart      = errors.New("name part is too long")
+	ErrEmptyNamePart        = domain.NewError("name part cannot be empty")
+	ErrInvalidNamePartChars = domain.NewError("name part contains invalid characters")
+	ErrTooLongNamePart      = domain.NewError("name part is too long")
 )
 
 type FullName struct {
@@ -67,7 +68,7 @@ func NewFullNameFromJSON(data []byte) (FullName, error) {
 	var temp fullNameJSON
 
 	if err := json.Unmarshal(data, &temp); err != nil {
-		return FullName{}, err
+		return FullName{}, domain.NewError("failed to build full name from json: %s", err)
 	}
 
 	newFullName, err := NewFullName(temp.FirstName, temp.MiddleName, temp.LastName)

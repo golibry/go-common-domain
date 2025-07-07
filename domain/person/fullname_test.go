@@ -3,6 +3,7 @@ package person
 import (
 	"encoding/json"
 	"errors"
+	"github.com/golibry/go-common-domain/domain"
 	"strings"
 	"testing"
 
@@ -74,6 +75,8 @@ func (s *FullNameTestSuite) TestItFailsToBuildNewFullNameFromInvalidFirstName() 
 			tc.name, func() {
 				_, err := NewFullName(tc.input, "William", "Doe")
 				s.Error(err)
+				var asErr *domain.Error
+				s.ErrorAs(err, &asErr)
 				s.True(
 					errors.Is(err, tc.expected),
 					"Expected error containing %v, got %v",
@@ -105,6 +108,8 @@ func (s *FullNameTestSuite) TestItFailsToBuildNewFullNameFromInvalidLastName() {
 			tc.name, func() {
 				_, err := NewFullName("John", "William", tc.input)
 				s.Error(err)
+				var asErr *domain.Error
+				s.ErrorAs(err, &asErr)
 				s.True(
 					errors.Is(err, tc.expected),
 					"Expected error containing %v, got %v",
@@ -185,4 +190,11 @@ func (s *FullNameTestSuite) TestReconstitute() {
 	s.Equal(firstname, fullName.FirstName())
 	s.Equal(middleName, fullName.MiddleName())
 	s.Equal(lastName, fullName.LastName())
+}
+
+func (s *FullNameTestSuite) TestItFailsToBuildNewFromInvalidJson() {
+	_, err := NewFullNameFromJSON([]byte("invalid json"))
+	s.NotNil(err)
+	var domainErr *domain.Error
+	s.ErrorAs(err, &domainErr)
 }
