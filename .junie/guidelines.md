@@ -67,6 +67,7 @@ func NewFullName(firstName, middleName, lastName string) (FullName, error) {
 - Use early returns to reduce nesting
 - Group related functionality together
 - Separate concerns clearly
+- Do not use both value and pointer receivers in struct methods. Use one or the other
 
 ### Concurrency
 - Follow Go's concurrency patterns: "Don't communicate by sharing memory; share memory by communicating"
