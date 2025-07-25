@@ -10,9 +10,9 @@ import (
 const MaxURLLength = 2048
 
 var (
-	ErrEmptyURL    = domain.NewError("URL cannot be empty")
-	ErrInvalidURL  = domain.NewError("URL format is invalid")
-	ErrTooLongURL  = domain.NewError("URL is too long")
+	ErrEmptyURL   = domain.NewError("URL cannot be empty")
+	ErrInvalidURL = domain.NewError("URL format is invalid")
+	ErrTooLongURL = domain.NewError("URL is too long")
 )
 
 type URL struct {
@@ -104,45 +104,40 @@ func (u URL) MarshalJSON() ([]byte, error) {
 func NormalizeURL(urlStr string) (string, error) {
 	// Trim spaces from the beginning and end
 	urlStr = strings.TrimSpace(urlStr)
-	
-	if err := IsValidURL(urlStr); err != nil {
+
+	parsed, err := IsValidURL(urlStr)
+	if err != nil {
 		return "", err
 	}
-	
-	// Parse and reconstruct to normalize the URL
-	parsed, err := url.Parse(urlStr)
-	if err != nil {
-		return "", ErrInvalidURL
-	}
-	
+
 	return parsed.String(), nil
 }
 
 // IsValidURL validates a URL
-func IsValidURL(urlStr string) error {
+func IsValidURL(urlStr string) (*url.URL, error) {
 	if urlStr == "" {
-		return ErrEmptyURL
+		return nil, ErrEmptyURL
 	}
-	
+
 	if len(urlStr) > MaxURLLength {
-		return ErrTooLongURL
+		return nil, ErrTooLongURL
 	}
-	
+
 	// Parse the URL to check if it's valid
 	parsed, err := url.Parse(urlStr)
 	if err != nil {
-		return ErrInvalidURL
+		return nil, ErrInvalidURL
 	}
-	
+
 	// Check if scheme and host are present
 	if parsed.Scheme == "" {
-		return ErrInvalidURL
+		return nil, ErrInvalidURL
 	}
-	
+
 	// For absolute URLs, host should be present
 	if parsed.IsAbs() && parsed.Host == "" {
-		return ErrInvalidURL
+		return nil, ErrInvalidURL
 	}
-	
-	return nil
+
+	return parsed, nil
 }
