@@ -18,7 +18,23 @@ func NewError(format string, a ...any) *Error {
 	}
 }
 
+// NewErrorWithWrap creates a new Error that wraps another error.
+func NewErrorWithWrap(err error, format string, a ...any) *Error {
+	return &Error{
+		prevErr: err,
+		msg:     fmt.Sprintf(format, a...),
+	}
+}
+
 // Error returns the error message, satisfying the error interface.
 func (e *Error) Error() string {
+	if e.prevErr != nil {
+		return fmt.Sprintf("%s: %v", e.msg, e.prevErr)
+	}
 	return e.msg
+}
+
+// Unwrap returns the wrapped error, enabling compatibility with errors.Is and errors.As.
+func (e *Error) Unwrap() error {
+	return e.prevErr
 }
