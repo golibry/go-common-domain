@@ -43,11 +43,11 @@ func ReconstituteCountryCode(value string) CountryCode {
 
 // NewCountryCodeFromJSON creates CountryCode from JSON bytes array
 func NewCountryCodeFromJSON(data []byte) (CountryCode, error) {
-	var temp countryCodeJSON
+    var temp countryCodeJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return CountryCode{}, domain.NewError("failed to build country code from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return CountryCode{}, domain.NewErrorWithWrap(err, "failed to build country code from json")
+    }
 
 	newCountryCode, err := NewCountryCode(temp.Value)
 	if err != nil {

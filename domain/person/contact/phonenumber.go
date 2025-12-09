@@ -8,7 +8,8 @@ import (
 	"unicode"
 )
 
-const MaxPhoneNumberLength = 20
+// MaxPhoneNumberLength defines the maximum number of digits allowed by E.164 (15 digits, excluding '+').
+const MaxPhoneNumberLength = 15
 
 var (
 	ErrEmptyPhoneNumber        = domain.NewError("phone number cannot be empty")
@@ -108,28 +109,37 @@ func NormalizePhoneNumber(phoneNumber string) (string, error) {
 		}
 	}
 
-	normalized := result.String()
+ normalized := result.String()
 
-	if err := IsValidPhoneNumber(normalized); err != nil {
-		return "", err
-	}
+ if err := IsValidPhoneNumber(normalized); err != nil {
+     return "", err
+ }
 
 	return normalized, nil
 }
 
 // IsValidPhoneNumber validates a phone number
 func IsValidPhoneNumber(phoneNumber string) error {
-	if phoneNumber == "" {
-		return ErrEmptyPhoneNumber
-	}
+    if phoneNumber == "" {
+        return ErrEmptyPhoneNumber
+    }
 
-	if len(phoneNumber) > MaxPhoneNumberLength {
-		return ErrTooLongPhoneNumber
-	}
-
-	if len(phoneNumber) < 3 {
-		return ErrTooShortPhoneNumber
-	}
+    // Count only digits to comply with E.164 limits (exclude optional '+').
+    digits := 0
+    for i, r := range phoneNumber {
+        if i == 0 && r == '+' {
+            continue
+        }
+        if unicode.IsDigit(r) {
+            digits++
+        }
+    }
+    if digits > MaxPhoneNumberLength {
+        return ErrTooLongPhoneNumber
+    }
+    if digits < 3 { // maintain existing lower bound policy
+        return ErrTooShortPhoneNumber
+    }
 
 	// Check for invalid characters (should only contain digits and optionally start with +)
 	for i, r := range phoneNumber {
@@ -142,9 +152,9 @@ func IsValidPhoneNumber(phoneNumber string) error {
 	}
 
 	// Use regex for final validation
-	if !phoneNumberRegex.MatchString(phoneNumber) {
-		return ErrInvalidPhoneNumberChars
-	}
+ if !phoneNumberRegex.MatchString(phoneNumber) {
+        return ErrInvalidPhoneNumberChars
+    }
 
 	return nil
 }

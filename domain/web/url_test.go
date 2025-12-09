@@ -90,10 +90,10 @@ func (s *URLTestSuite) TestItFailsToBuildNewURLFromInvalidValues() {
 			input:         "example.com",
 			expectedError: ErrInvalidURL,
 		},
-		{
+ 	{
 			name:          "URL with invalid scheme",
 			input:         "invalid://example.com",
-			expectedError: nil, // This might actually be valid
+			expectedError: ErrInvalidURL,
 		},
 		{
 			name:          "URL without host",

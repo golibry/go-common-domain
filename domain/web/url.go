@@ -2,9 +2,10 @@ package web
 
 import (
 	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
 	"net/url"
 	"strings"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 const MaxURLLength = 2048
@@ -35,7 +36,12 @@ func NewURL(value string) (URL, error) {
 	}, nil
 }
 
-// ReconstituteURL creates a new URL instance without validation or normalization
+// ReconstituteURL creates a new URL instance without validation or normalization.
+//
+// ReconstituteURL should only be used with values that were previously validated
+// and persisted by this package. Passing an arbitrary or invalid value may cause
+// component accessors like Scheme(), Host(), and Path() to return empty results
+// due to failed parsing.
 func ReconstituteURL(value string) URL {
 	return URL{
 		value: value,
@@ -47,7 +53,7 @@ func NewURLFromJSON(data []byte) (URL, error) {
 	var temp urlJSON
 
 	if err := json.Unmarshal(data, &temp); err != nil {
-		return URL{}, domain.NewError("failed to build URL from json: %s", err)
+		return URL{}, domain.NewErrorWithWrap(err, "failed to build URL from json")
 	}
 
 	newURL, err := NewURL(temp.Value)
@@ -131,6 +137,14 @@ func IsValidURL(urlStr string) (*url.URL, error) {
 
 	// Check if scheme and host are present
 	if parsed.Scheme == "" {
+		return nil, ErrInvalidURL
+	}
+
+	// Enforce allowed schemes
+	switch strings.ToLower(parsed.Scheme) {
+	case "http", "https":
+		// ok
+	default:
 		return nil, ErrInvalidURL
 	}
 

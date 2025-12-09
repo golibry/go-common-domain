@@ -59,11 +59,11 @@ func ReconstituteIdentifier(value uint64) Identifier {
 
 // NewIdentifierFromJSON creates Identifier from JSON bytes array
 func NewIdentifierFromJSON(data []byte) (Identifier, error) {
-	var temp identifierJSON
+    var temp identifierJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return Identifier{}, domain.NewError("failed to build identifier from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return Identifier{}, domain.NewErrorWithWrap(err, "failed to build identifier from json")
+    }
 
 	return NewIdentifier(temp.Value)
 }

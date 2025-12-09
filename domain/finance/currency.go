@@ -43,11 +43,11 @@ func ReconstituteCurrency(value string) Currency {
 
 // NewCurrencyFromJSON creates Currency from JSON bytes array
 func NewCurrencyFromJSON(data []byte) (Currency, error) {
-	var temp currencyJSON
+    var temp currencyJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return Currency{}, domain.NewError("failed to build currency from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return Currency{}, domain.NewErrorWithWrap(err, "failed to build currency from json")
+    }
 
 	newCurrency, err := NewCurrency(temp.Value)
 	if err != nil {

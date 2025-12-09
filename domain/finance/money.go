@@ -35,10 +35,10 @@ func NewMoney(amount decimal.Decimal, currency Currency) (Money, error) {
 
 // NewMoneyFromString creates a new instance of Money from string amount and currency
 func NewMoneyFromString(amountStr, currencyStr string) (Money, error) {
-	amount, err := decimal.NewFromString(amountStr)
-	if err != nil {
-		return Money{}, domain.NewError("invalid amount format: %s", err)
-	}
+    amount, err := decimal.NewFromString(amountStr)
+    if err != nil {
+        return Money{}, domain.NewErrorWithWrap(err, "invalid amount format")
+    }
 
 	currency, err := NewCurrency(currencyStr)
 	if err != nil {
@@ -58,11 +58,11 @@ func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
 
 // NewMoneyFromJSON creates Money from JSON bytes array
 func NewMoneyFromJSON(data []byte) (Money, error) {
-	var temp moneyJSON
+    var temp moneyJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return Money{}, domain.NewError("failed to build money from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return Money{}, domain.NewErrorWithWrap(err, "failed to build money from json")
+    }
 
 	return NewMoneyFromString(temp.Amount, temp.Currency)
 }

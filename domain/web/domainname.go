@@ -57,11 +57,11 @@ func ReconstituteDomainName(value string) DomainName {
 
 // NewDomainNameFromJSON creates DomainName from JSON bytes array
 func NewDomainNameFromJSON(data []byte) (DomainName, error) {
-	var temp domainNameJSON
+    var temp domainNameJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return DomainName{}, domain.NewError("failed to build domain name from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return DomainName{}, domain.NewErrorWithWrap(err, "failed to build domain name from json")
+    }
 
 	newDomainName, err := NewDomainName(temp.Value)
 	if err != nil {

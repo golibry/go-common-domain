@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
-	"golang.org/x/crypto/bcrypt"
-	"regexp"
-	"strings"
-	"unicode"
-	"unicode/utf8"
+    "errors"
+    "encoding/json"
+    "github.com/golibry/go-common-domain/domain"
+    "golang.org/x/crypto/bcrypt"
+    "strings"
+    "unicode"
+    "unicode/utf8"
 )
 
 const (
@@ -43,7 +43,7 @@ type Password struct {
 }
 
 type passwordJSON struct {
-	HashedValue string `json:"hashedValue"`
+    HashedValue string `json:"hashedValue"`
 }
 
 // NewPassword creates a new Password instance with validation and secure hashing
@@ -72,11 +72,11 @@ func ReconstitutePassword(hashedValue string) Password {
 
 // NewPasswordFromJSON creates Password from JSON bytes array
 func NewPasswordFromJSON(data []byte) (Password, error) {
-	var temp passwordJSON
+    var temp passwordJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return Password{}, domain.NewError("failed to build password from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return Password{}, domain.NewErrorWithWrap(err, "failed to build password from json")
+    }
 
 	if temp.HashedValue == "" {
 		return Password{}, domain.NewError(
@@ -89,11 +89,14 @@ func NewPasswordFromJSON(data []byte) (Password, error) {
 
 // Verify checks if the provided plaintext password matches the stored hash
 func (p Password) Verify(plaintext string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(p.hashedValue), []byte(plaintext))
-	if err != nil {
-		return ErrPasswordVerifyFailed
-	}
-	return nil
+    err := bcrypt.CompareHashAndPassword([]byte(p.hashedValue), []byte(plaintext))
+    if err == nil {
+        return nil
+    }
+    if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+        return ErrPasswordVerifyFailed
+    }
+    return domain.NewErrorWithWrap(err, "failed to verify password")
 }
 
 // HashedValue returns the hashed password value
@@ -113,11 +116,24 @@ func (p Password) String() string {
 
 // MarshalJSON implements json.Marshaler
 func (p Password) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		passwordJSON{
-			HashedValue: p.hashedValue,
-		},
-	)
+    return json.Marshal(
+        passwordJSON{
+            HashedValue: p.hashedValue,
+        },
+    )
+}
+
+// UnmarshalJSON implements json.Unmarshaler
+func (p *Password) UnmarshalJSON(data []byte) error {
+    var temp passwordJSON
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return domain.NewErrorWithWrap(err, "failed to unmarshal password from json")
+    }
+    if temp.HashedValue == "" {
+        return domain.NewError("failed to unmarshal password from json: missing or empty hashedValue")
+    }
+    p.hashedValue = temp.HashedValue
+    return nil
 }
 
 // ValidatePassword validates a plaintext password against OWASP security standards
@@ -211,97 +227,63 @@ func validatePasswordStrength(password string) error {
 
 // isSequentialPattern checks for sequential characters like "123456" or "abcdef"
 func isSequentialPattern(password string) bool {
-	if len(password) < 4 {
-		return false
-	}
+    // Build rune slice
+    runes := []rune(password)
+    if len(runes) < 4 {
+        return false
+    }
 
-	// Check for numeric sequences
-	numericSeq := regexp.MustCompile(`\d{4,}`)
-	if numericSeq.MatchString(password) {
-		// Check if it's a simple ascending sequence
-		for i := 0; i < len(password)-3; i++ {
-			if password[i] >= '0' && password[i] <= '6' {
-				isSeq := true
-				for j := 1; j < 4; j++ {
-					if password[i+j] != password[i]+byte(j) {
-						isSeq = false
-						break
-					}
-				}
-				if isSeq {
-					return true
-				}
-			}
-		}
-		// Check if it's a simple descending sequence
-		for i := 0; i < len(password)-3; i++ {
-			if password[i] >= '3' && password[i] <= '9' {
-				isSeq := true
-				for j := 1; j < 4; j++ {
-					if password[i+j] != password[i]-byte(j) {
-						isSeq = false
-						break
-					}
-				}
-				if isSeq {
-					return true
-				}
-			}
-		}
-	}
+    // helper to check ranges
+    isDigit := func(r rune) bool { return r >= '0' && r <= '9' }
+    isLetter := func(r rune) bool {
+        lr := unicode.ToLower(r)
+        return lr >= 'a' && lr <= 'z'
+    }
 
-	// Check for alphabetic sequences
-	alphaSeq := regexp.MustCompile(`[a-zA-Z]{4,}`)
-	if alphaSeq.MatchString(password) {
-		lowerPass := strings.ToLower(password)
-		// Check for ascending sequences
-		for i := 0; i < len(lowerPass)-3; i++ {
-			if lowerPass[i] >= 'a' && lowerPass[i] <= 'w' {
-				isSeq := true
-				for j := 1; j < 4; j++ {
-					if lowerPass[i+j] != lowerPass[i]+byte(j) {
-						isSeq = false
-						break
-					}
-				}
-				if isSeq {
-					return true
-				}
-			}
-		}
-		// Check for descending sequences
-		for i := 0; i < len(lowerPass)-3; i++ {
-			if lowerPass[i] >= 'd' && lowerPass[i] <= 'z' {
-				isSeq := true
-				for j := 1; j < 4; j++ {
-					if lowerPass[i+j] != lowerPass[i]-byte(j) {
-						isSeq = false
-						break
-					}
-				}
-				if isSeq {
-					return true
-				}
-			}
-		}
-	}
+    // Sliding window of 4 runes for ascending/descending sequences
+    for i := 0; i <= len(runes)-4; i++ {
+        a, b, c, d := runes[i], runes[i+1], runes[i+2], runes[i+3]
 
-	return false
+        // numeric ascending
+        if isDigit(a) && isDigit(b) && isDigit(c) && isDigit(d) {
+            if b == a+1 && c == b+1 && d == c+1 {
+                return true
+            }
+            if b == a-1 && c == b-1 && d == c-1 {
+                return true
+            }
+        }
+
+        // alphabetic sequences (case-insensitive)
+        la, lb, lc, ld := unicode.ToLower(a), unicode.ToLower(b), unicode.ToLower(c), unicode.ToLower(d)
+        if isLetter(la) && isLetter(lb) && isLetter(lc) && isLetter(ld) {
+            if lb == la+1 && lc == lb+1 && ld == lc+1 {
+                return true
+            }
+            if lb == la-1 && lc == lb-1 && ld == lc-1 {
+                return true
+            }
+        }
+    }
+    return false
 }
 
 // isRepeatingPattern checks for repeating characters like "aaaa" or "1111"
 func isRepeatingPattern(password string) bool {
-	if len(password) < 4 {
-		return false
-	}
-
-	for i := 0; i < len(password)-3; i++ {
-		if password[i] == password[i+1] &&
-			password[i+1] == password[i+2] &&
-			password[i+2] == password[i+3] {
-			return true
-		}
-	}
-
-	return false
+    runes := []rune(password)
+    if len(runes) < 4 {
+        return false
+    }
+    count := 1
+    for i := 1; i < len(runes); i++ {
+        if runes[i] == runes[i-1] {
+            count++
+            if count >= 4 {
+                return true
+            }
+        } else {
+            count = 1
+        }
+    }
+    return false
 }

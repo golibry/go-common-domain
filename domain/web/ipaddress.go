@@ -43,11 +43,11 @@ func ReconstituteIPAddress(value string) IPAddress {
 
 // NewIPAddressFromJSON creates IPAddress from JSON bytes array
 func NewIPAddressFromJSON(data []byte) (IPAddress, error) {
-	var temp ipAddressJSON
+    var temp ipAddressJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return IPAddress{}, domain.NewError("failed to build IP address from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return IPAddress{}, domain.NewErrorWithWrap(err, "failed to build IP address from json")
+    }
 
 	newIPAddress, err := NewIPAddress(temp.Value)
 	if err != nil {
@@ -101,15 +101,15 @@ func NormalizeIPAddress(ipAddress string) (string, error) {
 	// Preprocess IPv4 addresses to remove leading zeros
 	preprocessed := preprocessIPv4(ipAddress)
 
-	if err := IsValidIPAddress(preprocessed); err != nil {
-		return ipAddress, err
-	}
+ if err := IsValidIPAddress(preprocessed); err != nil {
+        return "", err
+    }
 
 	// Parse and format to ensure consistent representation
 	parsedIP := net.ParseIP(preprocessed)
-	if parsedIP == nil {
-		return ipAddress, ErrInvalidIPAddress
-	}
+ if parsedIP == nil {
+        return "", ErrInvalidIPAddress
+    }
 
 	// For IPv4, ensure standard dotted decimal notation
 	if parsedIP.To4() != nil {

@@ -49,9 +49,9 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierWithValidValues() {
 			tc.name, func() {
 				identifier, err := NewIdentifier(tc.input)
 				s.NoError(err)
-				s.Equal(tc.expected, identifier.Value())
-				s.Equal(int64(tc.expected), identifier.Value())
-				s.Equal(tc.expected, identifier.Value())
+    s.Equal(tc.expected, identifier.Value())
+    s.EqualValues(tc.expected, identifier.Value())
+    s.Equal(tc.expected, identifier.Value())
 			},
 		)
 	}

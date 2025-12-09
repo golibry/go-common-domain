@@ -65,11 +65,11 @@ func ReconstituteFullName(firstName, middleName, lastName string) FullName {
 
 // NewFullNameFromJSON creates FullName from JSON bytes array
 func NewFullNameFromJSON(data []byte) (FullName, error) {
-	var temp fullNameJSON
+    var temp fullNameJSON
 
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return FullName{}, domain.NewError("failed to build full name from json: %s", err)
-	}
+    if err := json.Unmarshal(data, &temp); err != nil {
+        return FullName{}, domain.NewErrorWithWrap(err, "failed to build full name from json")
+    }
 
 	newFullName, err := NewFullName(temp.FirstName, temp.MiddleName, temp.LastName)
 	if err != nil {
@@ -138,10 +138,10 @@ func NormalizeNamePart(namePart string) (string, error) {
 		prevRune = r
 	}
 
-	resultStr := result.String()
-	if err := IsValidNamePart(resultStr); err != nil {
-		return namePart, err
-	}
+ resultStr := result.String()
+ if err := IsValidNamePart(resultStr); err != nil {
+     return "", err
+ }
 
 	return resultStr, nil
 }
