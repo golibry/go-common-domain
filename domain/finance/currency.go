@@ -1,10 +1,10 @@
 package finance
 
 import (
-	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
 	"regexp"
 	"strings"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 var (
@@ -16,10 +16,6 @@ var currencyRegex = regexp.MustCompile(`^[A-Z]{3}$`)
 
 type Currency struct {
 	value string
-}
-
-type currencyJSON struct {
-	Value string `json:"value"`
 }
 
 // NewCurrency creates a new instance of Currency with validation and normalization
@@ -41,22 +37,6 @@ func ReconstituteCurrency(value string) Currency {
 	}
 }
 
-// NewCurrencyFromJSON creates Currency from JSON bytes array
-func NewCurrencyFromJSON(data []byte) (Currency, error) {
-    var temp currencyJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return Currency{}, domain.NewErrorWithWrap(err, "failed to build currency from json")
-    }
-
-	newCurrency, err := NewCurrency(temp.Value)
-	if err != nil {
-		return Currency{}, err
-	}
-
-	return newCurrency, nil
-}
-
 // Value returns the currency value
 func (c Currency) Value() string {
 	return c.value
@@ -72,24 +52,15 @@ func (c Currency) String() string {
 	return c.value
 }
 
-// MarshalJSON implements json.Marshaler
-func (c Currency) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		currencyJSON{
-			Value: c.value,
-		},
-	)
-}
-
 // NormalizeCurrency normalizes a currency by trimming spaces and converting to uppercase
 func NormalizeCurrency(currency string) (string, error) {
 	// Trim spaces and convert to uppercase
 	normalized := strings.ToUpper(strings.TrimSpace(currency))
-	
+
 	if err := IsValidCurrency(normalized); err != nil {
 		return "", err
 	}
-	
+
 	return normalized, nil
 }
 
@@ -98,10 +69,10 @@ func IsValidCurrency(currency string) error {
 	if currency == "" {
 		return ErrEmptyCurrency
 	}
-	
+
 	if !currencyRegex.MatchString(currency) {
 		return ErrInvalidCurrency
 	}
-	
+
 	return nil
 }

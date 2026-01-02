@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -30,12 +29,18 @@ func (s *PasswordTestSuite) TestItCanCreateNewPasswordWithValidInput() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			password, err := NewPassword(tc.password)
-			s.NoError(err)
-			s.NotEmpty(password.HashedValue())
-			s.Equal("[PROTECTED]", password.String())
-		})
+		s.Run(
+			tc.name, func() {
+				password, err := NewPassword(tc.password)
+				s.NoError(err)
+				s.NotEmpty(password.HashedValue())
+				s.Assert().NotEqual(
+					password.HashedValue(),
+					tc.password,
+					"Password should be hashed",
+				)
+			},
+		)
 	}
 }
 
@@ -50,11 +55,13 @@ func (s *PasswordTestSuite) TestItFailsToCreatePasswordThatIsTooShort() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewPassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, ErrPasswordTooShort))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewPassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, ErrPasswordTooShort))
+			},
+		)
 	}
 }
 
@@ -80,11 +87,13 @@ func (s *PasswordTestSuite) TestItFailsToCreatePasswordThatIsTooWeak() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewPassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, ErrPasswordTooWeak))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewPassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, ErrPasswordTooWeak))
+			},
+		)
 	}
 }
 
@@ -94,20 +103,30 @@ func (s *PasswordTestSuite) TestItFailsToCreateCommonPasswords() {
 		password    string
 		expectedErr error
 	}{
-		{"password", "password", ErrPasswordTooWeak}, // 8 chars, fails complexity (no numbers/special chars)
-		{"Password123", "Password123", ErrPasswordTooWeak}, // 11 chars, fails complexity (no special chars)
-		{"123456", "123456", ErrPasswordTooShort}, // 6 chars, fails length first
-		{"qwerty", "qwerty", ErrPasswordTooShort}, // 6 chars, fails length first
-		{"admin", "admin", ErrPasswordTooShort},   // 5 chars, fails length first
+		{
+			"password",
+			"password",
+			ErrPasswordTooWeak,
+		}, // 8 chars, fails complexity (no numbers/special chars)
+		{
+			"Password123",
+			"Password123",
+			ErrPasswordTooWeak,
+		}, // 11 chars, fails complexity (no special chars)
+		{"123456", "123456", ErrPasswordTooShort},   // 6 chars, fails length first
+		{"qwerty", "qwerty", ErrPasswordTooShort},   // 6 chars, fails length first
+		{"admin", "admin", ErrPasswordTooShort},     // 5 chars, fails length first
 		{"letmein", "letmein", ErrPasswordTooShort}, // 7 chars, fails length first
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewPassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedErr))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewPassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expectedErr))
+			},
+		)
 	}
 }
 
@@ -122,11 +141,13 @@ func (s *PasswordTestSuite) TestItFailsToCreatePasswordsWithSequentialPatterns()
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewPassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, ErrPasswordCommon))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewPassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, ErrPasswordCommon))
+			},
+		)
 	}
 }
 
@@ -141,11 +162,13 @@ func (s *PasswordTestSuite) TestItFailsToCreatePasswordsWithRepeatingPatterns() 
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewPassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, ErrPasswordCommon))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewPassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, ErrPasswordCommon))
+			},
+		)
 	}
 }
 
@@ -185,13 +208,13 @@ func (s *PasswordTestSuite) TestPasswordEquals() {
 	password2, err := NewPassword(plaintext)
 	s.NoError(err)
 
-	// Different passwords with same plaintext should have different hashes (due to salt)
+	// Different passwords with the same plaintext should have different hashes (due to salt)
 	s.False(password1.Equals(password2))
 
-	// Same password object should equal itself
+	// The same password object should equal itself
 	s.True(password1.Equals(password1))
 
-	// Reconstituted password with same hash should be equal
+	// Reconstituted password with the same hash should be equal
 	reconstituted := ReconstitutePassword(password1.HashedValue())
 	s.True(password1.Equals(reconstituted))
 }
@@ -200,54 +223,6 @@ func (s *PasswordTestSuite) TestPasswordString() {
 	password, err := NewPassword("MySecure123!@")
 	s.NoError(err)
 	s.Equal("[PROTECTED]", password.String())
-}
-
-func (s *PasswordTestSuite) TestJSONSerialization() {
-	plaintext := "MySecure123!@"
-	password, err := NewPassword(plaintext)
-	s.NoError(err)
-
-	// Test marshaling
-	jsonData, err := json.Marshal(password)
-	s.NoError(err)
-	s.Contains(string(jsonData), "hashedValue")
-	s.NotContains(string(jsonData), plaintext)
-
-	// Test unmarshaling
-	var unmarshaled Password
-	err = json.Unmarshal(jsonData, &unmarshaled)
-	s.NoError(err)
-	s.True(password.Equals(unmarshaled))
-
-	// Verify the unmarshaled password works
-	err = unmarshaled.Verify(plaintext)
-	s.NoError(err)
-}
-
-func (s *PasswordTestSuite) TestNewPasswordFromJSON() {
-	plaintext := "MySecure123!@"
-	originalPassword, err := NewPassword(plaintext)
-	s.NoError(err)
-
-	// Create JSON data
-	jsonData, err := json.Marshal(originalPassword)
-	s.NoError(err)
-
-	// Test NewPasswordFromJSON
-	password, err := NewPasswordFromJSON(jsonData)
-	s.NoError(err)
-	s.True(originalPassword.Equals(password))
-
-	// Verify the password works
-	err = password.Verify(plaintext)
-	s.NoError(err)
-}
-
-func (s *PasswordTestSuite) TestItFailsToBuildPasswordFromInvalidJSON() {
-	invalidJSON := []byte(`{"invalid": "json"}`)
-	_, err := NewPasswordFromJSON(invalidJSON)
-	s.Error(err)
-	s.Contains(err.Error(), "failed to build password from json")
 }
 
 func (s *PasswordTestSuite) TestReconstitutePassword() {
@@ -275,10 +250,12 @@ func (s *PasswordTestSuite) TestPasswordValidation() {
 	}
 
 	for _, pwd := range validPasswords {
-		s.Run("valid: "+pwd, func() {
-			err := ValidatePassword(pwd)
-			s.NoError(err)
-		})
+		s.Run(
+			"valid: "+pwd, func() {
+				err := ValidatePassword(pwd)
+				s.NoError(err)
+			},
+		)
 	}
 
 	// Test invalid passwords
@@ -297,21 +274,23 @@ func (s *PasswordTestSuite) TestPasswordValidation() {
 	}
 
 	for _, tc := range invalidPasswords {
-		s.Run("invalid: "+tc.password, func() {
-			err := ValidatePassword(tc.password)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expected))
-		})
+		s.Run(
+			"invalid: "+tc.password, func() {
+				err := ValidatePassword(tc.password)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expected))
+			},
+		)
 	}
 }
 
 func (s *PasswordTestSuite) TestPasswordHashingConsistency() {
 	plaintext := "MySecure123!@"
-	
-	// Create multiple passwords with same plaintext
+
+	// Create multiple passwords with the same plaintext
 	password1, err := NewPassword(plaintext)
 	s.NoError(err)
-	
+
 	password2, err := NewPassword(plaintext)
 	s.NoError(err)
 
@@ -321,24 +300,4 @@ func (s *PasswordTestSuite) TestPasswordHashingConsistency() {
 	// But both should verify correctly
 	s.NoError(password1.Verify(plaintext))
 	s.NoError(password2.Verify(plaintext))
-}
-
-func (s *PasswordTestSuite) TestPasswordSecurityProperties() {
-	plaintext := "MySecure123!@"
-	password, err := NewPassword(plaintext)
-	s.NoError(err)
-
-	// Hash should not contain plaintext
-	s.NotContains(password.HashedValue(), plaintext)
-	s.NotContains(password.HashedValue(), "MySecure")
-	s.NotContains(password.HashedValue(), "123")
-
-	// Hash should be bcrypt format (starts with $2a$, $2b$, or $2y$)
-	hash := password.HashedValue()
-	s.True(strings.HasPrefix(hash, "$2a$") || 
-		   strings.HasPrefix(hash, "$2b$") || 
-		   strings.HasPrefix(hash, "$2y$"))
-
-	// Hash should contain cost factor
-	s.Contains(hash, "$12$") // BcryptCost = 12
 }

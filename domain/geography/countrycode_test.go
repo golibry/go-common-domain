@@ -55,12 +55,14 @@ func (s *CountryCodeTestSuite) TestItCanBuildNewCountryCodeWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			countryCode, err := NewCountryCode(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, countryCode.Value())
-			s.Equal(tc.expected, countryCode.String())
-		})
+		s.Run(
+			tc.name, func() {
+				countryCode, err := NewCountryCode(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, countryCode.Value())
+				s.Equal(tc.expected, countryCode.String())
+			},
+		)
 	}
 }
 
@@ -108,11 +110,13 @@ func (s *CountryCodeTestSuite) TestItFailsToBuildNewCountryCodeFromInvalidValues
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewCountryCode(tc.input)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedError))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewCountryCode(tc.input)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expectedError))
+			},
+		)
 	}
 }
 
@@ -145,11 +149,13 @@ func (s *CountryCodeTestSuite) TestCountryCodeNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeCountryCode(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeCountryCode(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
@@ -169,45 +175,14 @@ func (s *CountryCodeTestSuite) TestString() {
 
 func (s *CountryCodeTestSuite) TestJSONSerialization() {
 	countryCode, _ := NewCountryCode("US")
-	
+
 	jsonData, err := json.Marshal(countryCode)
 	s.NoError(err)
-	s.JSONEq(`{"value":"US"}`, string(jsonData))
+	s.JSONEq(`{}`, string(jsonData))
 }
 
 func (s *CountryCodeTestSuite) TestReconstitute() {
 	countryCode := ReconstituteCountryCode("US")
 	s.Equal("US", countryCode.Value())
 	s.Equal("US", countryCode.String())
-}
-
-func (s *CountryCodeTestSuite) TestItCanBuildNewCountryCodeFromValidJSON() {
-	jsonData := `{"value":"US"}`
-	
-	countryCode, err := NewCountryCodeFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("US", countryCode.Value())
-}
-
-func (s *CountryCodeTestSuite) TestItFailsToBuildNewCountryCodeFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"US"`,
-		},
-		{
-			name:     "invalid country code in JSON",
-			jsonData: `{"value":"USA"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewCountryCodeFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-		})
-	}
 }

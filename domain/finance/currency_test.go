@@ -1,7 +1,6 @@
 package finance
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -55,12 +54,14 @@ func (s *CurrencyTestSuite) TestItCanBuildNewCurrencyWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			currency, err := NewCurrency(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, currency.Value())
-			s.Equal(tc.expected, currency.String())
-		})
+		s.Run(
+			tc.name, func() {
+				currency, err := NewCurrency(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, currency.Value())
+				s.Equal(tc.expected, currency.String())
+			},
+		)
 	}
 }
 
@@ -113,11 +114,13 @@ func (s *CurrencyTestSuite) TestItFailsToBuildNewCurrencyFromInvalidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewCurrency(tc.input)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedError))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewCurrency(tc.input)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expectedError))
+			},
+		)
 	}
 }
 
@@ -150,11 +153,13 @@ func (s *CurrencyTestSuite) TestCurrencyNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeCurrency(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeCurrency(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
@@ -172,47 +177,8 @@ func (s *CurrencyTestSuite) TestString() {
 	s.Equal("USD", currency.String())
 }
 
-func (s *CurrencyTestSuite) TestJSONSerialization() {
-	currency, _ := NewCurrency("USD")
-	
-	jsonData, err := json.Marshal(currency)
-	s.NoError(err)
-	s.JSONEq(`{"value":"USD"}`, string(jsonData))
-}
-
 func (s *CurrencyTestSuite) TestReconstitute() {
 	currency := ReconstituteCurrency("USD")
 	s.Equal("USD", currency.Value())
 	s.Equal("USD", currency.String())
-}
-
-func (s *CurrencyTestSuite) TestItCanBuildNewCurrencyFromValidJSON() {
-	jsonData := `{"value":"USD"}`
-	
-	currency, err := NewCurrencyFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("USD", currency.Value())
-}
-
-func (s *CurrencyTestSuite) TestItFailsToBuildNewCurrencyFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"USD"`,
-		},
-		{
-			name:     "invalid currency in JSON",
-			jsonData: `{"value":"USDD"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewCurrencyFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-		})
-	}
 }

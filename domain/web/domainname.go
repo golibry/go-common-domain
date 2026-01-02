@@ -1,11 +1,11 @@
 package web
 
 import (
-	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 const (
@@ -32,10 +32,6 @@ type DomainName struct {
 	value string
 }
 
-type domainNameJSON struct {
-	Value string `json:"value"`
-}
-
 // NewDomainName creates a new instance of DomainName with validation and normalization
 func NewDomainName(value string) (DomainName, error) {
 	normalized, err := NormalizeDomainName(value)
@@ -55,22 +51,6 @@ func ReconstituteDomainName(value string) DomainName {
 	}
 }
 
-// NewDomainNameFromJSON creates DomainName from JSON bytes array
-func NewDomainNameFromJSON(data []byte) (DomainName, error) {
-    var temp domainNameJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return DomainName{}, domain.NewErrorWithWrap(err, "failed to build domain name from json")
-    }
-
-	newDomainName, err := NewDomainName(temp.Value)
-	if err != nil {
-		return DomainName{}, err
-	}
-
-	return newDomainName, nil
-}
-
 // Value returns the domain name value
 func (d DomainName) Value() string {
 	return d.value
@@ -84,15 +64,6 @@ func (d DomainName) Equals(other DomainName) bool {
 // String returns a string representation of the domain name
 func (d DomainName) String() string {
 	return d.value
-}
-
-// MarshalJSON implements json.Marshaler
-func (d DomainName) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		domainNameJSON{
-			Value: d.value,
-		},
-	)
 }
 
 // NormalizeDomainName normalizes a domain name by converting to lowercase and trimming spaces

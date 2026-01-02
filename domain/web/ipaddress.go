@@ -1,10 +1,10 @@
 package web
 
 import (
-	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
 	"net"
 	"strings"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 var (
@@ -16,10 +16,6 @@ var (
 
 type IPAddress struct {
 	value string
-}
-
-type ipAddressJSON struct {
-	Value string `json:"value"`
 }
 
 // NewIPAddress creates a new instance of IPAddress with validation and normalization
@@ -39,22 +35,6 @@ func ReconstituteIPAddress(value string) IPAddress {
 	return IPAddress{
 		value: value,
 	}
-}
-
-// NewIPAddressFromJSON creates IPAddress from JSON bytes array
-func NewIPAddressFromJSON(data []byte) (IPAddress, error) {
-    var temp ipAddressJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return IPAddress{}, domain.NewErrorWithWrap(err, "failed to build IP address from json")
-    }
-
-	newIPAddress, err := NewIPAddress(temp.Value)
-	if err != nil {
-		return IPAddress{}, err
-	}
-
-	return newIPAddress, nil
 }
 
 // Value returns the IP address value
@@ -84,15 +64,6 @@ func (ip IPAddress) String() string {
 	return ip.value
 }
 
-// MarshalJSON implements json.Marshaler
-func (ip IPAddress) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		ipAddressJSON{
-			Value: ip.value,
-		},
-	)
-}
-
 // NormalizeIPAddress normalizes an IP address by trimming spaces and standardizing format
 func NormalizeIPAddress(ipAddress string) (string, error) {
 	// Trim spaces from the beginning and end
@@ -101,15 +72,15 @@ func NormalizeIPAddress(ipAddress string) (string, error) {
 	// Preprocess IPv4 addresses to remove leading zeros
 	preprocessed := preprocessIPv4(ipAddress)
 
- if err := IsValidIPAddress(preprocessed); err != nil {
-        return "", err
-    }
+	if err := IsValidIPAddress(preprocessed); err != nil {
+		return "", err
+	}
 
 	// Parse and format to ensure consistent representation
 	parsedIP := net.ParseIP(preprocessed)
- if parsedIP == nil {
-        return "", ErrInvalidIPAddress
-    }
+	if parsedIP == nil {
+		return "", ErrInvalidIPAddress
+	}
 
 	// For IPv4, ensure standard dotted decimal notation
 	if parsedIP.To4() != nil {

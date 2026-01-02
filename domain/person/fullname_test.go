@@ -1,11 +1,11 @@
 package person
 
 import (
-	"encoding/json"
 	"errors"
-	"github.com/golibry/go-common-domain/domain"
 	"strings"
 	"testing"
+
+	"github.com/golibry/go-common-domain/domain"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -31,6 +31,7 @@ func (s *FullNameTestSuite) TestItCanBuildNewFullNameWithValidParts() {
 		{"Compound last name", "Mary", "Jane", "O'Connor"},
 		{"Hyphenated last name", "Sarah", "Jessica", "Parker-Davis"},
 		{"Name with periods", "J.R", "", "Tolkien"},
+		{"Middle initial with period is allowed", "John", "F.", "Doe"},
 		{"Name with normalization", "  John  ", "  William  ", "  Doe  "},
 	}
 
@@ -169,16 +170,6 @@ func (s *FullNameTestSuite) TestString() {
 	s.Equal("John Doe", name2.String())
 }
 
-// TestJSONSerialization tests the JSON marshaling and unmarshalling
-func (s *FullNameTestSuite) TestJSONSerialization() {
-	name, _ := NewFullName("John", "William", "Doe")
-
-	jsonData, _ := json.Marshal(name)
-	unmarshalledName, _ := NewFullNameFromJSON(jsonData)
-
-	s.True(name.Equals(unmarshalledName))
-}
-
 // TestReconstitute tests the ReconstituteFullName function
 func (s *FullNameTestSuite) TestReconstitute() {
 	firstname := "John"
@@ -190,11 +181,4 @@ func (s *FullNameTestSuite) TestReconstitute() {
 	s.Equal(firstname, fullName.FirstName())
 	s.Equal(middleName, fullName.MiddleName())
 	s.Equal(lastName, fullName.LastName())
-}
-
-func (s *FullNameTestSuite) TestItFailsToBuildNewFromInvalidJson() {
-	_, err := NewFullNameFromJSON([]byte("invalid json"))
-	s.NotNil(err)
-	var domainErr *domain.Error
-	s.ErrorAs(err, &domainErr)
 }

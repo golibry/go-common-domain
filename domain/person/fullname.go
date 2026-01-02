@@ -1,20 +1,19 @@
 package person
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/golibry/go-common-domain/domain"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 const MaxNamePartLength = 128
 
 var (
 	ErrEmptyNamePart        = domain.NewError("name part cannot be empty")
-	ErrInvalidNamePartChars = domain.NewError("name part contains invalid characters")
+	ErrInvalidNamePartChars = domain.NewError("name part contains invalid characters; allowed: letters (Unicode), spaces, hyphens (-), apostrophes ('), and periods (.). Name parts cannot start or end with a hyphen, apostrophe, or period.")
 	ErrTooLongNamePart      = domain.NewError("name part is too long")
 )
 
@@ -24,26 +23,28 @@ type FullName struct {
 	lastName   string
 }
 
-type fullNameJSON struct {
-	FirstName  string `json:"firstName"`
-	MiddleName string `json:"middleName"`
-	LastName   string `json:"lastName"`
-}
-
-// NewFullName creates a new instance of FullName
+// NewFullName creates a new instance of FullName.
+// It normalizes parts (trimming and collapsing repeated separators) and validates them.
+// Allowed characters are Unicode letters, spaces, hyphens (-), apostrophes ('), and periods (.).
+// Name parts cannot start or end with a hyphen, apostrophe, or period.
+// The middle name can be empty or a single-letter initial followed by a period (e.g., "F.").
 func NewFullName(firstName, middleName, lastName string) (FullName, error) {
-	normalizedFirst, err := NormalizeNamePart(firstName)
-	if err != nil {
+	normalizedFirst, _ := NormalizeNamePart(firstName)
+	if err := IsValidNamePart(normalizedFirst); err != nil {
 		return FullName{}, fmt.Errorf("%w (first name)", err)
 	}
 
-	normalizedMiddle, err := NormalizeNamePart(middleName)
-	if err != nil && !errors.Is(err, ErrEmptyNamePart) {
-		return FullName{}, fmt.Errorf("%w (middle name)", err)
+	normalizedMiddle, _ := NormalizeNamePart(middleName)
+	if normalizedMiddle != "" {
+		if err := IsValidNamePart(normalizedMiddle); err != nil {
+			if !isInitialWithPeriod(normalizedMiddle) {
+				return FullName{}, fmt.Errorf("%w (middle name)", err)
+			}
+		}
 	}
 
-	normalizedLast, err := NormalizeNamePart(lastName)
-	if err != nil {
+	normalizedLast, _ := NormalizeNamePart(lastName)
+	if err := IsValidNamePart(normalizedLast); err != nil {
 		return FullName{}, fmt.Errorf("%w (last name)", err)
 	}
 
@@ -61,22 +62,6 @@ func ReconstituteFullName(firstName, middleName, lastName string) FullName {
 		middleName: middleName,
 		lastName:   lastName,
 	}
-}
-
-// NewFullNameFromJSON creates FullName from JSON bytes array
-func NewFullNameFromJSON(data []byte) (FullName, error) {
-    var temp fullNameJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return FullName{}, domain.NewErrorWithWrap(err, "failed to build full name from json")
-    }
-
-	newFullName, err := NewFullName(temp.FirstName, temp.MiddleName, temp.LastName)
-	if err != nil {
-		return FullName{}, err
-	}
-
-	return newFullName, nil
 }
 
 // FirstName returns the first name
@@ -109,17 +94,6 @@ func (f FullName) String() string {
 	return fmt.Sprintf("%s %s %s", f.firstName, f.middleName, f.lastName)
 }
 
-// MarshalJSON implements json.Marshaler
-func (f FullName) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		fullNameJSON{
-			FirstName:  f.firstName,
-			MiddleName: f.middleName,
-			LastName:   f.lastName,
-		},
-	)
-}
-
 func NormalizeNamePart(namePart string) (string, error) {
 	// Trim spaces from the beginning and end
 	namePart = strings.TrimSpace(namePart)
@@ -138,11 +112,9 @@ func NormalizeNamePart(namePart string) (string, error) {
 		prevRune = r
 	}
 
- resultStr := result.String()
- if err := IsValidNamePart(resultStr); err != nil {
-     return "", err
- }
-
+	resultStr := result.String()
+	// Note: Validation is intentionally separated from normalization.
+	// Callers should validate the normalized value via IsValidNamePart or custom rules.
 	return resultStr, nil
 }
 
@@ -175,4 +147,16 @@ func IsValidNamePart(namePart string) error {
 	}
 
 	return nil
+}
+
+// isInitialWithPeriod reports whether the provided string is a single
+// Unicode letter followed by a period, e.g., "F.". This is allowed
+// for the middle name only.
+func isInitialWithPeriod(s string) bool {
+	if utf8.RuneCountInString(s) != 2 {
+		return false
+	}
+	r1, size := utf8.DecodeRuneInString(s)
+	r2, _ := utf8.DecodeRuneInString(s[size:])
+	return unicode.IsLetter(r1) && r2 == '.'
 }

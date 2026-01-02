@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -18,10 +17,6 @@ var (
 
 type URL struct {
 	value string
-}
-
-type urlJSON struct {
-	Value string `json:"value"`
 }
 
 // NewURL creates a new instance of URL with validation and normalization
@@ -48,43 +43,23 @@ func ReconstituteURL(value string) URL {
 	}
 }
 
-// NewURLFromJSON creates URL from JSON bytes array
-func NewURLFromJSON(data []byte) (URL, error) {
-	var temp urlJSON
-
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return URL{}, domain.NewErrorWithWrap(err, "failed to build URL from json")
-	}
-
-	newURL, err := NewURL(temp.Value)
-	if err != nil {
-		return URL{}, err
-	}
-
-	return newURL, nil
-}
-
 // Value returns the URL value
 func (u URL) Value() string {
 	return u.value
 }
 
-// Scheme returns the URL scheme (e.g., "https", "http")
-func (u URL) Scheme() string {
-	parsed, _ := url.Parse(u.value)
-	return parsed.Scheme
+// String returns a string representation of the phone number
+func (p URL) String() string {
+	return p.value
 }
 
-// Host returns the URL host
-func (u URL) Host() string {
+// Parsed returns the URL representation of the raw url string (value)
+func (u URL) Parsed() url.URL {
 	parsed, _ := url.Parse(u.value)
-	return parsed.Host
-}
-
-// Path returns the URL path
-func (u URL) Path() string {
-	parsed, _ := url.Parse(u.value)
-	return parsed.Path
+	if parsed == nil {
+		return url.URL{}
+	}
+	return *parsed
 }
 
 // Equals compares two URL objects for equality
@@ -92,21 +67,7 @@ func (u URL) Equals(other URL) bool {
 	return u.value == other.value
 }
 
-// String returns a string representation of the URL
-func (u URL) String() string {
-	return u.value
-}
-
-// MarshalJSON implements json.Marshaler
-func (u URL) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		urlJSON{
-			Value: u.value,
-		},
-	)
-}
-
-// NormalizeURL normalizes a URL by trimming spaces and ensuring proper format
+// NormalizeURL normalizes a URL by trimming spaces and ensuring a proper format
 func NormalizeURL(urlStr string) (string, error) {
 	// Trim spaces from the beginning and end
 	urlStr = strings.TrimSpace(urlStr)
@@ -148,7 +109,7 @@ func IsValidURL(urlStr string) (*url.URL, error) {
 		return nil, ErrInvalidURL
 	}
 
-	// For absolute URLs, host should be present
+	// For absolute URLs, the host should be present
 	if parsed.IsAbs() && parsed.Host == "" {
 		return nil, ErrInvalidURL
 	}

@@ -193,44 +193,11 @@ func (s *PhoneNumberTestSuite) TestJSONSerialization() {
 
 	jsonData, err := json.Marshal(phoneNumber)
 	s.NoError(err)
-	s.JSONEq(`{"value":"+1234567890"}`, string(jsonData))
+	s.JSONEq(`{}`, string(jsonData))
 }
 
 func (s *PhoneNumberTestSuite) TestReconstitute() {
 	phoneNumber := ReconstitutePhoneNumber("+1234567890")
 	s.Equal("+1234567890", phoneNumber.Value())
 	s.Equal("+1234567890", phoneNumber.String())
-}
-
-func (s *PhoneNumberTestSuite) TestItCanBuildNewPhoneNumberFromValidJSON() {
-	jsonData := `{"value":"+1234567890"}`
-
-	phoneNumber, err := NewPhoneNumberFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("+1234567890", phoneNumber.Value())
-}
-
-func (s *PhoneNumberTestSuite) TestItFailsToBuildNewPhoneNumberFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"+1234567890"`,
-		},
-		{
-			name:     "invalid phone number in JSON",
-			jsonData: `{"value":"invalid"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(
-			tc.name, func() {
-				_, err := NewPhoneNumberFromJSON([]byte(tc.jsonData))
-				s.Error(err)
-			},
-		)
-	}
 }

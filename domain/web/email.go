@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -38,10 +37,6 @@ type Email struct {
 	value string
 }
 
-type emailJSON struct {
-	Value string `json:"value"`
-}
-
 // NewEmail creates a new instance of Email with validation and normalization
 func NewEmail(value string) (Email, error) {
 	normalized, err := NormalizeEmail(value)
@@ -59,22 +54,6 @@ func ReconstituteEmail(value string) Email {
 	return Email{
 		value: value,
 	}
-}
-
-// NewEmailFromJSON creates Email from JSON bytes array
-func NewEmailFromJSON(data []byte) (Email, error) {
-	var temp emailJSON
-
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return Email{}, domain.NewErrorWithWrap(err, "failed to build email from json")
-	}
-
-	newEmail, err := NewEmail(temp.Value)
-	if err != nil {
-		return Email{}, err
-	}
-
-	return newEmail, nil
 }
 
 // Value returns the email address value
@@ -108,15 +87,6 @@ func (e Email) Equals(other Email) bool {
 // String returns a string representation of the email address
 func (e Email) String() string {
 	return e.value
-}
-
-// MarshalJSON implements json.Marshaler
-func (e Email) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		emailJSON{
-			Value: e.value,
-		},
-	)
 }
 
 // NormalizeEmail normalizes an email address by converting to lowercase and trimming spaces

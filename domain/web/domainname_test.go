@@ -66,12 +66,14 @@ func (s *DomainNameTestSuite) TestItCanBuildNewDomainNameWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			domainName, err := NewDomainName(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, domainName.Value())
-			s.Equal(tc.expected, domainName.String())
-		})
+		s.Run(
+			tc.name, func() {
+				domainName, err := NewDomainName(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, domainName.Value())
+				s.Equal(tc.expected, domainName.String())
+			},
+		)
 	}
 }
 
@@ -164,11 +166,18 @@ func (s *DomainNameTestSuite) TestItFailsToBuildNewDomainNameFromInvalidValues()
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewDomainName(tc.input)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedError), "Expected error %v, got %v", tc.expectedError, err)
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewDomainName(tc.input)
+				s.Error(err)
+				s.True(
+					errors.Is(err, tc.expectedError),
+					"Expected error %v, got %v",
+					tc.expectedError,
+					err,
+				)
+			},
+		)
 	}
 }
 
@@ -201,11 +210,13 @@ func (s *DomainNameTestSuite) TestDomainNameNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeDomainName(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeDomainName(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
@@ -225,10 +236,10 @@ func (s *DomainNameTestSuite) TestString() {
 
 func (s *DomainNameTestSuite) TestJSONSerialization() {
 	domain, _ := NewDomainName("example.com")
-	
+
 	jsonData, err := json.Marshal(domain)
 	s.NoError(err)
-	s.JSONEq(`{"value":"example.com"}`, string(jsonData))
+	s.JSONEq(`{}`, string(jsonData))
 }
 
 func (s *DomainNameTestSuite) TestReconstitute() {
@@ -236,41 +247,6 @@ func (s *DomainNameTestSuite) TestReconstitute() {
 	domain := ReconstituteDomainName("invalid..domain")
 	s.Equal("invalid..domain", domain.Value())
 	s.Equal("invalid..domain", domain.String())
-}
-
-func (s *DomainNameTestSuite) TestItCanBuildNewDomainNameFromValidJSON() {
-	jsonData := `{"value":"example.com"}`
-	
-	domain, err := NewDomainNameFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("example.com", domain.Value())
-}
-
-func (s *DomainNameTestSuite) TestItFailsToBuildNewDomainNameFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"example.com"`,
-		},
-		{
-			name:     "invalid domain in JSON",
-			jsonData: `{"value":"invalid..domain"}`,
-		},
-		{
-			name:     "empty JSON",
-			jsonData: `{}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewDomainNameFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-		})
-	}
 }
 
 func (s *DomainNameTestSuite) TestIsValidDomainName() {
@@ -332,13 +308,15 @@ func (s *DomainNameTestSuite) TestIsValidDomainName() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := IsValidDomainName(tc.input)
-			if tc.isValid {
-				s.NoError(err)
-			} else {
-				s.Error(err)
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				err := IsValidDomainName(tc.input)
+				if tc.isValid {
+					s.NoError(err)
+				} else {
+					s.Error(err)
+				}
+			},
+		)
 	}
 }

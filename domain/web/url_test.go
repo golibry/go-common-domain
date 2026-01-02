@@ -60,12 +60,13 @@ func (s *URLTestSuite) TestItCanBuildNewURLWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			url, err := NewURL(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, url.Value())
-			s.Equal(tc.expected, url.String())
-		})
+		s.Run(
+			tc.name, func() {
+				url, err := NewURL(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, url.Value())
+			},
+		)
 	}
 }
 
@@ -90,7 +91,7 @@ func (s *URLTestSuite) TestItFailsToBuildNewURLFromInvalidValues() {
 			input:         "example.com",
 			expectedError: ErrInvalidURL,
 		},
- 	{
+		{
 			name:          "URL with invalid scheme",
 			input:         "invalid://example.com",
 			expectedError: ErrInvalidURL,
@@ -108,13 +109,15 @@ func (s *URLTestSuite) TestItFailsToBuildNewURLFromInvalidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewURL(tc.input)
-			if tc.expectedError != nil {
-				s.Error(err)
-				s.True(errors.Is(err, tc.expectedError))
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewURL(tc.input)
+				if tc.expectedError != nil {
+					s.Error(err)
+					s.True(errors.Is(err, tc.expectedError))
+				}
+			},
+		)
 	}
 }
 
@@ -137,20 +140,23 @@ func (s *URLTestSuite) TestURLNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeURL(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeURL(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
 func (s *URLTestSuite) TestURLComponents() {
 	url, _ := NewURL("https://example.com:8080/path/to/resource?q=test#section")
 
-	s.Equal("https", url.Scheme())
-	s.Equal("example.com:8080", url.Host())
-	s.Equal("/path/to/resource", url.Path())
+	parsed := url.Parsed()
+	s.Equal("https", parsed.Scheme)
+	s.Equal("example.com:8080", parsed.Host)
+	s.Equal("/path/to/resource", parsed.Path)
 }
 
 func (s *URLTestSuite) TestEquals() {
@@ -162,54 +168,22 @@ func (s *URLTestSuite) TestEquals() {
 	s.False(url1.Equals(url3))
 }
 
-func (s *URLTestSuite) TestString() {
+func (s *URLTestSuite) TestValue() {
 	url, _ := NewURL("https://example.com")
-	s.Equal("https://example.com", url.String())
+	s.Equal("https://example.com", url.Value())
 }
 
 func (s *URLTestSuite) TestJSONSerialization() {
 	url, _ := NewURL("https://example.com")
-	
-	jsonData, err := json.Marshal(url)
+
+	jsonData, err := json.Marshal(url.Value())
 	s.NoError(err)
-	s.JSONEq(`{"value":"https://example.com"}`, string(jsonData))
+	s.Equal(`"https://example.com"`, string(jsonData))
 }
 
 func (s *URLTestSuite) TestReconstitute() {
 	url := ReconstituteURL("https://example.com")
 	s.Equal("https://example.com", url.Value())
-	s.Equal("https://example.com", url.String())
-}
-
-func (s *URLTestSuite) TestItCanBuildNewURLFromValidJSON() {
-	jsonData := `{"value":"https://example.com"}`
-	
-	url, err := NewURLFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("https://example.com", url.Value())
-}
-
-func (s *URLTestSuite) TestItFailsToBuildNewURLFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"https://example.com"`,
-		},
-		{
-			name:     "invalid URL in JSON",
-			jsonData: `{"value":"invalid-url"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewURLFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-		})
-	}
 }
 
 func (s *URLTestSuite) TestTooLongURL() {

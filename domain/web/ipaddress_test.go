@@ -85,12 +85,14 @@ func (s *IPAddressTestSuite) TestItCanBuildNewIPAddressWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			ipAddress, err := NewIPAddress(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, ipAddress.Value())
-			s.Equal(tc.expected, ipAddress.String())
-		})
+		s.Run(
+			tc.name, func() {
+				ipAddress, err := NewIPAddress(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, ipAddress.Value())
+				s.Equal(tc.expected, ipAddress.String())
+			},
+		)
 	}
 }
 
@@ -163,11 +165,13 @@ func (s *IPAddressTestSuite) TestItFailsToBuildNewIPAddressFromInvalidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewIPAddress(tc.input)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedError))
-		})
+		s.Run(
+			tc.name, func() {
+				_, err := NewIPAddress(tc.input)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expectedError))
+			},
+		)
 	}
 }
 
@@ -200,11 +204,13 @@ func (s *IPAddressTestSuite) TestIPAddressNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeIPAddress(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeIPAddress(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
@@ -237,11 +243,13 @@ func (s *IPAddressTestSuite) TestIPv4Detection() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			ipAddress, err := NewIPAddress(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, ipAddress.IsIPv4())
-		})
+		s.Run(
+			tc.name, func() {
+				ipAddress, err := NewIPAddress(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, ipAddress.IsIPv4())
+			},
+		)
 	}
 }
 
@@ -274,11 +282,13 @@ func (s *IPAddressTestSuite) TestIPv6Detection() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			ipAddress, err := NewIPAddress(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, ipAddress.IsIPv6())
-		})
+		s.Run(
+			tc.name, func() {
+				ipAddress, err := NewIPAddress(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, ipAddress.IsIPv6())
+			},
+		)
 	}
 }
 
@@ -300,50 +310,12 @@ func (s *IPAddressTestSuite) TestJSONSerialization() {
 	ip, _ := NewIPAddress("192.168.1.1")
 	data, err := json.Marshal(ip)
 	s.NoError(err)
-	s.JSONEq(`{"value":"192.168.1.1"}`, string(data))
+	s.JSONEq(`{}`, string(data))
 }
 
 func (s *IPAddressTestSuite) TestReconstitute() {
 	ip := ReconstituteIPAddress("192.168.1.1")
 	s.Equal("192.168.1.1", ip.Value())
-}
-
-func (s *IPAddressTestSuite) TestItCanBuildNewIPAddressFromValidJSON() {
-	jsonData := `{"value":"192.168.1.1"}`
-	ip, err := NewIPAddressFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("192.168.1.1", ip.Value())
-}
-
-func (s *IPAddressTestSuite) TestItFailsToBuildNewIPAddressFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"192.168.1.1"`,
-		},
-		{
-			name:     "invalid IP in JSON",
-			jsonData: `{"value":"invalid.ip"}`,
-		},
-		{
-			name:     "empty JSON",
-			jsonData: `{}`,
-		},
-		{
-			name:     "malformed JSON",
-			jsonData: `not json`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			_, err := NewIPAddressFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-		})
-	}
 }
 
 func (s *IPAddressTestSuite) TestIsValidIPAddress() {
@@ -375,14 +347,16 @@ func (s *IPAddressTestSuite) TestIsValidIPAddress() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := IsValidIPAddress(tc.input)
-			if tc.shouldErr {
-				s.Error(err)
-			} else {
-				s.NoError(err)
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				err := IsValidIPAddress(tc.input)
+				if tc.shouldErr {
+					s.Error(err)
+				} else {
+					s.NoError(err)
+				}
+			},
+		)
 	}
 }
 
@@ -415,14 +389,16 @@ func (s *IPAddressTestSuite) TestIsValidIPv4Address() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := IsValidIPv4Address(tc.input)
-			if tc.shouldErr {
-				s.Error(err)
-			} else {
-				s.NoError(err)
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				err := IsValidIPv4Address(tc.input)
+				if tc.shouldErr {
+					s.Error(err)
+				} else {
+					s.NoError(err)
+				}
+			},
+		)
 	}
 }
 
@@ -455,13 +431,15 @@ func (s *IPAddressTestSuite) TestIsValidIPv6Address() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := IsValidIPv6Address(tc.input)
-			if tc.shouldErr {
-				s.Error(err)
-			} else {
-				s.NoError(err)
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				err := IsValidIPv6Address(tc.input)
+				if tc.shouldErr {
+					s.Error(err)
+				} else {
+					s.NoError(err)
+				}
+			},
+		)
 	}
 }

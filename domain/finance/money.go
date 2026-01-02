@@ -1,8 +1,8 @@
 package finance
 
 import (
-	"encoding/json"
 	"fmt"
+
 	"github.com/golibry/go-common-domain/domain"
 	"github.com/shopspring/decimal"
 )
@@ -14,11 +14,6 @@ var (
 type Money struct {
 	amount   decimal.Decimal
 	currency Currency
-}
-
-type moneyJSON struct {
-	Amount   string `json:"amount"`
-	Currency string `json:"currency"`
 }
 
 // NewMoney creates a new instance of Money with validation
@@ -35,10 +30,10 @@ func NewMoney(amount decimal.Decimal, currency Currency) (Money, error) {
 
 // NewMoneyFromString creates a new instance of Money from string amount and currency
 func NewMoneyFromString(amountStr, currencyStr string) (Money, error) {
-    amount, err := decimal.NewFromString(amountStr)
-    if err != nil {
-        return Money{}, domain.NewErrorWithWrap(err, "invalid amount format")
-    }
+	amount, err := decimal.NewFromString(amountStr)
+	if err != nil {
+		return Money{}, domain.NewErrorWithWrap(err, "invalid amount format")
+	}
 
 	currency, err := NewCurrency(currencyStr)
 	if err != nil {
@@ -54,17 +49,6 @@ func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
 		amount:   amount,
 		currency: currency,
 	}
-}
-
-// NewMoneyFromJSON creates Money from JSON bytes array
-func NewMoneyFromJSON(data []byte) (Money, error) {
-    var temp moneyJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return Money{}, domain.NewErrorWithWrap(err, "failed to build money from json")
-    }
-
-	return NewMoneyFromString(temp.Amount, temp.Currency)
 }
 
 // Amount returns the money amount
@@ -87,10 +71,14 @@ func (m Money) String() string {
 	return fmt.Sprintf("%s %s", m.amount.String(), m.currency.String())
 }
 
-// Add adds another Money object to this one (must have same currency)
+// Add adds another Money object to this one (must have the same currency)
 func (m Money) Add(other Money) (Money, error) {
 	if !m.currency.Equals(other.currency) {
-		return Money{}, domain.NewError("cannot add money with different currencies: %s and %s", m.currency.String(), other.currency.String())
+		return Money{}, domain.NewError(
+			"cannot add money with different currencies: %s and %s",
+			m.currency.String(),
+			other.currency.String(),
+		)
 	}
 
 	newAmount := m.amount.Add(other.amount)
@@ -103,7 +91,11 @@ func (m Money) Add(other Money) (Money, error) {
 // Subtract subtracts another Money object from this one (must have same currency)
 func (m Money) Subtract(other Money) (Money, error) {
 	if !m.currency.Equals(other.currency) {
-		return Money{}, domain.NewError("cannot subtract money with different currencies: %s and %s", m.currency.String(), other.currency.String())
+		return Money{}, domain.NewError(
+			"cannot subtract money with different currencies: %s and %s",
+			m.currency.String(),
+			other.currency.String(),
+		)
 	}
 
 	newAmount := m.amount.Sub(other.amount)
@@ -130,14 +122,21 @@ func (m Money) Multiply(factor decimal.Decimal) (Money, error) {
 	}, nil
 }
 
-// MarshalJSON implements json.Marshaler
-func (m Money) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		moneyJSON{
-			Amount:   m.amount.String(),
-			Currency: m.currency.String(),
-		},
-	)
+// Divide divides the money amount by a divisor
+func (m Money) Divide(divisor decimal.Decimal) (Money, error) {
+	if divisor.IsZero() {
+		return Money{}, domain.NewError("cannot divide by zero")
+	}
+
+	newAmount := m.amount.Div(divisor)
+	if newAmount.IsNegative() {
+		return Money{}, ErrNegativeAmount
+	}
+
+	return Money{
+		amount:   newAmount,
+		currency: m.currency,
+	}, nil
 }
 
 // IsValidMoneyAmount validates a money amount (must not be negative)

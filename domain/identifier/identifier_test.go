@@ -1,7 +1,6 @@
 package identifier
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -47,11 +46,11 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierWithValidValues() {
 	for _, tc := range testCases {
 		s.Run(
 			tc.name, func() {
-				identifier, err := NewIdentifier(tc.input)
+				identifier, err := NewIntIdentifier(tc.input)
 				s.NoError(err)
-    s.Equal(tc.expected, identifier.Value())
-    s.EqualValues(tc.expected, identifier.Value())
-    s.Equal(tc.expected, identifier.Value())
+				s.Equal(tc.expected, identifier.Value())
+				s.EqualValues(tc.expected, identifier.Value())
+				s.Equal(tc.expected, identifier.Value())
 			},
 		)
 	}
@@ -60,7 +59,7 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierWithValidValues() {
 func (s *IdentifierTestSuite) TestItFailsToBuildNewIdentifierFromInvalidValues() {
 	testCases := []struct {
 		name          string
-		input         uint64
+		input         int64
 		expectedError error
 	}{
 		{
@@ -73,49 +72,9 @@ func (s *IdentifierTestSuite) TestItFailsToBuildNewIdentifierFromInvalidValues()
 	for _, tc := range testCases {
 		s.Run(
 			tc.name, func() {
-				_, err := NewIdentifier(tc.input)
+				_, err := NewIntIdentifierFromInt(tc.input)
 				s.Error(err)
 				s.True(errors.Is(err, tc.expectedError))
-			},
-		)
-	}
-}
-
-func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierFromInt() {
-	testCases := []struct {
-		name          string
-		input         int64
-		expected      uint64
-		expectedError error
-	}{
-		{
-			name:     "positive int",
-			input:    123,
-			expected: 123,
-		},
-		{
-			name:          "negative int",
-			input:         -123,
-			expectedError: ErrNegativeIdentifier,
-		},
-		{
-			name:          "zero int",
-			input:         0,
-			expectedError: ErrZeroIdentifier,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(
-			tc.name, func() {
-				identifier, err := NewIdentifierFromInt(tc.input)
-				if tc.expectedError != nil {
-					s.Error(err)
-					s.True(errors.Is(err, tc.expectedError))
-				} else {
-					s.NoError(err)
-					s.Equal(tc.expected, identifier.Value())
-				}
 			},
 		)
 	}
@@ -168,7 +127,7 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierFromString() {
 	for _, tc := range testCases {
 		s.Run(
 			tc.name, func() {
-				identifier, err := NewIdentifierFromString(tc.input)
+				identifier, err := NewIntIdentifierFromString(tc.input)
 				if tc.expectedError != nil {
 					s.Error(err)
 					s.True(errors.Is(err, tc.expectedError))
@@ -182,66 +141,21 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierFromString() {
 }
 
 func (s *IdentifierTestSuite) TestEquals() {
-	identifier1, _ := NewIdentifier(123)
-	identifier2, _ := NewIdentifier(123)
-	identifier3, _ := NewIdentifier(456)
+	identifier1, _ := NewIntIdentifier(123)
+	identifier2, _ := NewIntIdentifier(123)
+	identifier3, _ := NewIntIdentifier(456)
 
 	s.True(identifier1.Equals(identifier2))
 	s.False(identifier1.Equals(identifier3))
 }
 
 func (s *IdentifierTestSuite) TestString() {
-	identifier, _ := NewIdentifier(12345)
+	identifier, _ := NewIntIdentifier(12345)
 	s.Equal("12345", identifier.String())
-}
-
-func (s *IdentifierTestSuite) TestJSONSerialization() {
-	identifier, _ := NewIdentifier(12345)
-
-	jsonData, err := json.Marshal(identifier)
-	s.NoError(err)
-	s.JSONEq(`{"value":12345}`, string(jsonData))
 }
 
 func (s *IdentifierTestSuite) TestReconstitute() {
-	identifier := ReconstituteIdentifier(12345)
+	identifier := ReconstituteIntIdentifier(12345)
 	s.Equal(uint64(12345), identifier.Value())
 	s.Equal("12345", identifier.String())
-}
-
-func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierFromValidJSON() {
-	jsonData := `{"value":12345}`
-
-	identifier, err := NewIdentifierFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal(uint64(12345), identifier.Value())
-}
-
-func (s *IdentifierTestSuite) TestItFailsToBuildNewIdentifierFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":12345`,
-		},
-		{
-			name:     "zero identifier in JSON",
-			jsonData: `{"value":0}`,
-		},
-		{
-			name:     "string value in JSON",
-			jsonData: `{"value":"123"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(
-			tc.name, func() {
-				_, err := NewIdentifierFromJSON([]byte(tc.jsonData))
-				s.Error(err)
-			},
-		)
-	}
 }

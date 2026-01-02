@@ -71,11 +71,13 @@ func (s *EmailTestSuite) TestItCanBuildNewEmailWithValidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			email, err := NewEmail(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, email.Value())
-		})
+		s.Run(
+			tc.name, func() {
+				email, err := NewEmail(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, email.Value())
+			},
+		)
 	}
 }
 
@@ -168,12 +170,19 @@ func (s *EmailTestSuite) TestItFailsToBuildNewEmailFromInvalidValues() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			email, err := NewEmail(tc.input)
-			s.Error(err)
-			s.True(errors.Is(err, tc.expectedError), "Expected error %v, got %v", tc.expectedError, err)
-			s.Equal(Email{}, email)
-		})
+		s.Run(
+			tc.name, func() {
+				email, err := NewEmail(tc.input)
+				s.Error(err)
+				s.True(
+					errors.Is(err, tc.expectedError),
+					"Expected error %v, got %v",
+					tc.expectedError,
+					err,
+				)
+				s.Equal(Email{}, email)
+			},
+		)
 	}
 }
 
@@ -216,11 +225,13 @@ func (s *EmailTestSuite) TestEmailNormalization() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			normalized, err := NormalizeEmail(tc.input)
-			s.NoError(err)
-			s.Equal(tc.expected, normalized)
-		})
+		s.Run(
+			tc.name, func() {
+				normalized, err := NormalizeEmail(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, normalized)
+			},
+		)
 	}
 }
 
@@ -262,11 +273,13 @@ func (s *EmailTestSuite) TestLocalPart() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			email, err := NewEmail(tc.email)
-			s.NoError(err)
-			s.Equal(tc.expected, email.LocalPart())
-		})
+		s.Run(
+			tc.name, func() {
+				email, err := NewEmail(tc.email)
+				s.NoError(err)
+				s.Equal(tc.expected, email.LocalPart())
+			},
+		)
 	}
 }
 
@@ -294,11 +307,13 @@ func (s *EmailTestSuite) TestDomainPart() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			email, err := NewEmail(tc.email)
-			s.NoError(err)
-			s.Equal(tc.expected, email.DomainPart())
-		})
+		s.Run(
+			tc.name, func() {
+				email, err := NewEmail(tc.email)
+				s.NoError(err)
+				s.Equal(tc.expected, email.DomainPart())
+			},
+		)
 	}
 }
 
@@ -306,51 +321,12 @@ func (s *EmailTestSuite) TestJSONSerialization() {
 	email, _ := NewEmail("test@example.com")
 	jsonData, err := json.Marshal(email)
 	s.NoError(err)
-	s.JSONEq(`{"value":"test@example.com"}`, string(jsonData))
+	s.JSONEq(`{}`, string(jsonData))
 }
 
 func (s *EmailTestSuite) TestReconstitute() {
 	email := ReconstituteEmail("test@example.com")
 	s.Equal("test@example.com", email.Value())
-}
-
-func (s *EmailTestSuite) TestItCanBuildNewEmailFromValidJSON() {
-	jsonData := `{"value":"test@example.com"}`
-	email, err := NewEmailFromJSON([]byte(jsonData))
-	s.NoError(err)
-	s.Equal("test@example.com", email.Value())
-}
-
-func (s *EmailTestSuite) TestItFailsToBuildNewEmailFromInvalidJSON() {
-	testCases := []struct {
-		name     string
-		jsonData string
-	}{
-		{
-			name:     "invalid JSON format",
-			jsonData: `{"value":"test@example.com"`,
-		},
-		{
-			name:     "invalid email in JSON",
-			jsonData: `{"value":"invalid-email"}`,
-		},
-		{
-			name:     "empty JSON",
-			jsonData: `{}`,
-		},
-		{
-			name:     "null value",
-			jsonData: `{"value":null}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			email, err := NewEmailFromJSON([]byte(tc.jsonData))
-			s.Error(err)
-			s.Equal(Email{}, email)
-		})
-	}
 }
 
 func (s *EmailTestSuite) TestIsValidEmail() {
@@ -429,14 +405,21 @@ func (s *EmailTestSuite) TestIsValidEmail() {
 	}
 
 	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			err := IsValidEmail(tc.email)
-			if tc.isValid {
-				s.NoError(err)
-			} else {
-				s.Error(err)
-				s.True(errors.Is(err, tc.expected), "Expected error %v, got %v", tc.expected, err)
-			}
-		})
+		s.Run(
+			tc.name, func() {
+				err := IsValidEmail(tc.email)
+				if tc.isValid {
+					s.NoError(err)
+				} else {
+					s.Error(err)
+					s.True(
+						errors.Is(err, tc.expected),
+						"Expected error %v, got %v",
+						tc.expected,
+						err,
+					)
+				}
+			},
+		)
 	}
 }

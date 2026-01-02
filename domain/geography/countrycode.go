@@ -1,10 +1,10 @@
 package geography
 
 import (
-	"encoding/json"
-	"github.com/golibry/go-common-domain/domain"
 	"regexp"
 	"strings"
+
+	"github.com/golibry/go-common-domain/domain"
 )
 
 var (
@@ -16,10 +16,6 @@ var countryCodeRegex = regexp.MustCompile(`^[A-Z]{2}$`)
 
 type CountryCode struct {
 	value string
-}
-
-type countryCodeJSON struct {
-	Value string `json:"value"`
 }
 
 // NewCountryCode creates a new instance of CountryCode with validation and normalization
@@ -41,22 +37,6 @@ func ReconstituteCountryCode(value string) CountryCode {
 	}
 }
 
-// NewCountryCodeFromJSON creates CountryCode from JSON bytes array
-func NewCountryCodeFromJSON(data []byte) (CountryCode, error) {
-    var temp countryCodeJSON
-
-    if err := json.Unmarshal(data, &temp); err != nil {
-        return CountryCode{}, domain.NewErrorWithWrap(err, "failed to build country code from json")
-    }
-
-	newCountryCode, err := NewCountryCode(temp.Value)
-	if err != nil {
-		return CountryCode{}, err
-	}
-
-	return newCountryCode, nil
-}
-
 // Value returns the country code value
 func (c CountryCode) Value() string {
 	return c.value
@@ -72,24 +52,15 @@ func (c CountryCode) String() string {
 	return c.value
 }
 
-// MarshalJSON implements json.Marshaler
-func (c CountryCode) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		countryCodeJSON{
-			Value: c.value,
-		},
-	)
-}
-
 // NormalizeCountryCode normalizes a country code by trimming spaces and converting to uppercase
 func NormalizeCountryCode(countryCode string) (string, error) {
 	// Trim spaces and convert to uppercase
 	normalized := strings.ToUpper(strings.TrimSpace(countryCode))
-	
+
 	if err := IsValidCountryCode(normalized); err != nil {
 		return "", err
 	}
-	
+
 	return normalized, nil
 }
 
@@ -98,10 +69,10 @@ func IsValidCountryCode(countryCode string) error {
 	if countryCode == "" {
 		return ErrEmptyCountryCode
 	}
-	
+
 	if !countryCodeRegex.MatchString(countryCode) {
 		return ErrInvalidCountryCode
 	}
-	
+
 	return nil
 }
