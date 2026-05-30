@@ -1,6 +1,7 @@
 package person
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -168,6 +169,71 @@ func (s *FullNameTestSuite) TestString() {
 
 	name2, _ := NewFullName("John", "", "Doe")
 	s.Equal("John Doe", name2.String())
+}
+
+func (s *FullNameTestSuite) TestJSONSerialization() {
+	fullName, _ := NewFullName("John", "William", "Doe")
+
+	jsonData, err := json.Marshal(fullName)
+	s.NoError(err)
+	s.JSONEq(
+		`{"firstName":"John","middleName":"William","lastName":"Doe"}`,
+		string(jsonData),
+	)
+
+	fullName, _ = NewFullName("John", "", "Doe")
+	jsonData, err = json.Marshal(fullName)
+	s.NoError(err)
+	s.JSONEq(`{"firstName":"John","lastName":"Doe"}`, string(jsonData))
+
+	var decoded FullName
+	s.NoError(json.Unmarshal(
+		[]byte(`{"firstName":"  John  ","middleName":"F.","lastName":"  Doe  "}`),
+		&decoded,
+	))
+	s.Equal("John", decoded.FirstName())
+	s.Equal("F.", decoded.MiddleName())
+	s.Equal("Doe", decoded.LastName())
+}
+
+func (s *FullNameTestSuite) TestJSONSerializationFailsForInvalidValues() {
+	testCases := []struct {
+		name          string
+		jsonData      string
+		expectedError error
+	}{
+		{
+			name:          "invalid first name",
+			jsonData:      `{"firstName":"John123","lastName":"Doe"}`,
+			expectedError: ErrInvalidNamePartChars,
+		},
+		{
+			name:          "invalid middle name",
+			jsonData:      `{"firstName":"John","middleName":"William123","lastName":"Doe"}`,
+			expectedError: ErrInvalidNamePartChars,
+		},
+		{
+			name:          "missing first name",
+			jsonData:      `{"lastName":"Doe"}`,
+			expectedError: ErrEmptyNamePart,
+		},
+		{
+			name:          "missing last name",
+			jsonData:      `{"firstName":"John"}`,
+			expectedError: ErrEmptyNamePart,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(
+			tc.name, func() {
+				var decoded FullName
+				err := json.Unmarshal([]byte(tc.jsonData), &decoded)
+				s.Error(err)
+				s.True(errors.Is(err, tc.expectedError))
+			},
+		)
+	}
 }
 
 // TestReconstitute tests the ReconstituteFullName function

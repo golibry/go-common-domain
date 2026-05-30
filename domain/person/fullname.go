@@ -1,6 +1,7 @@
 package person
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"unicode"
@@ -21,6 +22,12 @@ type FullName struct {
 	firstName  string
 	middleName string
 	lastName   string
+}
+
+type fullNameJSON struct {
+	FirstName  string `json:"firstName"`
+	MiddleName string `json:"middleName,omitempty"`
+	LastName   string `json:"lastName"`
 }
 
 // NewFullName creates a new instance of FullName.
@@ -92,6 +99,31 @@ func (f FullName) String() string {
 		return fmt.Sprintf("%s %s", f.firstName, f.lastName)
 	}
 	return fmt.Sprintf("%s %s %s", f.firstName, f.middleName, f.lastName)
+}
+
+// MarshalJSON returns the full name as an explicit multi-part object.
+func (f FullName) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fullNameJSON{
+		FirstName:  f.firstName,
+		MiddleName: f.middleName,
+		LastName:   f.lastName,
+	})
+}
+
+// UnmarshalJSON validates and normalizes a JSON full name object.
+func (f *FullName) UnmarshalJSON(data []byte) error {
+	var raw fullNameJSON
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	fullName, err := NewFullName(raw.FirstName, raw.MiddleName, raw.LastName)
+	if err != nil {
+		return err
+	}
+
+	*f = fullName
+	return nil
 }
 
 func NormalizeNamePart(namePart string) (string, error) {
