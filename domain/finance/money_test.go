@@ -234,6 +234,54 @@ func (s *MoneyTestSuite) TestMoneyArithmetic() {
 	)
 }
 
+func (s *MoneyTestSuite) TestMoneyMultiplicationUsesRoundingMode() {
+	money, _ := NewMoneyFromString("10.03", "USD")
+	factor := decimal.NewFromFloat(0.5)
+
+	halfUp, err := money.Multiply(factor)
+	s.NoError(err)
+	s.Equal("5.02", halfUp.Amount().String())
+	s.Equal(int64(502), halfUp.AmountMinorUnits())
+
+	roundDown, err := money.MultiplyWithRounding(factor, RoundDown)
+	s.NoError(err)
+	s.Equal("5.01", roundDown.Amount().String())
+	s.Equal(int64(501), roundDown.AmountMinorUnits())
+
+	roundUp, err := money.MultiplyWithRounding(factor, RoundUp)
+	s.NoError(err)
+	s.Equal("5.02", roundUp.Amount().String())
+	s.Equal(int64(502), roundUp.AmountMinorUnits())
+
+	_, err = money.MultiplyWithRounding(factor, RoundingMode(999))
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidRoundingMode))
+}
+
+func (s *MoneyTestSuite) TestMoneyDivisionUsesRoundingMode() {
+	money, _ := NewMoneyFromString("10.05", "USD")
+	divisor := decimal.NewFromInt(2)
+
+	halfUp, err := money.Divide(divisor)
+	s.NoError(err)
+	s.Equal("5.03", halfUp.Amount().String())
+	s.Equal(int64(503), halfUp.AmountMinorUnits())
+
+	roundDown, err := money.DivideWithRounding(divisor, RoundDown)
+	s.NoError(err)
+	s.Equal("5.02", roundDown.Amount().String())
+	s.Equal(int64(502), roundDown.AmountMinorUnits())
+
+	roundUp, err := money.DivideWithRounding(divisor, RoundUp)
+	s.NoError(err)
+	s.Equal("5.03", roundUp.Amount().String())
+	s.Equal(int64(503), roundUp.AmountMinorUnits())
+
+	_, err = money.DivideWithRounding(divisor, RoundingMode(999))
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidRoundingMode))
+}
+
 func (s *MoneyTestSuite) TestEquals() {
 	usd, _ := NewCurrency("USD")
 	eur, _ := NewCurrency("EUR")

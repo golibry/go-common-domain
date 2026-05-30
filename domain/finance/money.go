@@ -214,16 +214,26 @@ func (m Money) Subtract(other Money) (Money, error) {
 
 // Multiply multiplies the money amount by a factor
 func (m Money) Multiply(factor decimal.Decimal) (Money, error) {
+	return m.MultiplyWithRounding(factor, RoundHalfUp)
+}
+
+// MultiplyWithRounding multiplies the money amount by a factor using the provided rounding mode.
+func (m Money) MultiplyWithRounding(factor decimal.Decimal, mode RoundingMode) (Money, error) {
 	newAmount := m.Amount().Mul(factor)
 	if newAmount.IsNegative() {
 		return Money{}, ErrNegativeAmount
 	}
 
-	return NewMoneyWithScale(newAmount, m.currency, m.scale)
+	return newMoneyWithRoundedAmount(newAmount, m.currency, m.scale, mode)
 }
 
 // Divide divides the money amount by a divisor
 func (m Money) Divide(divisor decimal.Decimal) (Money, error) {
+	return m.DivideWithRounding(divisor, RoundHalfUp)
+}
+
+// DivideWithRounding divides the money amount by a divisor using the provided rounding mode.
+func (m Money) DivideWithRounding(divisor decimal.Decimal, mode RoundingMode) (Money, error) {
 	if divisor.IsZero() {
 		return Money{}, domain.NewError("cannot divide by zero")
 	}
@@ -233,7 +243,7 @@ func (m Money) Divide(divisor decimal.Decimal) (Money, error) {
 		return Money{}, ErrNegativeAmount
 	}
 
-	return NewMoneyWithScale(newAmount, m.currency, m.scale)
+	return newMoneyWithRoundedAmount(newAmount, m.currency, m.scale, mode)
 }
 
 // IsValidMoneyAmount validates a money amount (must not be negative)
@@ -282,6 +292,32 @@ func decimalToMinorUnits(amount decimal.Decimal, scale int32) (int64, error) {
 	}
 
 	return amountMinor.Int64(), nil
+}
+
+func newMoneyWithRoundedAmount(amount decimal.Decimal, currency Currency, scale int32, mode RoundingMode) (Money, error) {
+	rounded, err := roundMoneyAmount(amount, scale, mode)
+	if err != nil {
+		return Money{}, err
+	}
+
+	return NewMoneyWithScale(rounded, currency, scale)
+}
+
+func roundMoneyAmount(amount decimal.Decimal, scale int32, mode RoundingMode) (decimal.Decimal, error) {
+	if err := IsValidMoneyScale(scale); err != nil {
+		return decimal.Zero, err
+	}
+
+	switch mode {
+	case RoundHalfUp:
+		return amount.Round(scale), nil
+	case RoundDown:
+		return amount.RoundDown(scale), nil
+	case RoundUp:
+		return amount.RoundUp(scale), nil
+	default:
+		return decimal.Zero, ErrInvalidRoundingMode
+	}
 }
 
 func maxScale(first, second int32) int32 {
