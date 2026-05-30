@@ -3,39 +3,79 @@ package finance
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/golibry/go-common-domain/domain"
 	"github.com/shopspring/decimal"
 )
 
+const (
+	DefaultMoneyScale int32 = 2
+	MaxMoneyScale     int32 = 18
+)
+
 var (
-	ErrNegativeAmount = domain.NewError("money amount cannot be negative")
+	ErrNegativeAmount              = domain.NewError("money amount cannot be negative")
+	ErrInvalidMoneyScale           = domain.NewError("money scale must be between 0 and 18")
+	ErrInvalidMoneyAmountPrecision = domain.NewError("money amount has more precision than scale allows")
+	ErrMoneyAmountTooLarge         = domain.NewError("money amount is too large")
 )
 
 type Money struct {
-	amount   decimal.Decimal
-	currency Currency
+	amountMinor int64
+	currency    Currency
+	scale       int32
 }
 
 type moneyJSON struct {
 	Amount   string   `json:"amount"`
 	Currency Currency `json:"currency"`
+	Scale    int32    `json:"scale"`
 }
 
 // NewMoney creates a new instance of Money with validation
 func NewMoney(amount decimal.Decimal, currency Currency) (Money, error) {
+	return NewMoneyWithScale(amount, currency, DefaultMoneyScale)
+}
+
+// NewMoneyWithScale creates a new instance of Money with validation and explicit minor-unit scale.
+func NewMoneyWithScale(amount decimal.Decimal, currency Currency, scale int32) (Money, error) {
 	if err := IsValidMoneyAmount(amount); err != nil {
 		return Money{}, err
 	}
 
+	amountMinor, err := decimalToMinorUnits(amount, scale)
+	if err != nil {
+		return Money{}, err
+	}
+
+	return NewMoneyFromMinorUnits(amountMinor, currency, scale)
+}
+
+// NewMoneyFromMinorUnits creates a new instance of Money from integer minor units.
+func NewMoneyFromMinorUnits(amountMinor int64, currency Currency, scale int32) (Money, error) {
+	if err := IsValidMoneyScale(scale); err != nil {
+		return Money{}, err
+	}
+
+	if amountMinor < 0 {
+		return Money{}, ErrNegativeAmount
+	}
+
 	return Money{
-		amount:   amount,
-		currency: currency,
+		amountMinor: amountMinor,
+		currency:    currency,
+		scale:       scale,
 	}, nil
 }
 
 // NewMoneyFromString creates a new instance of Money from string amount and currency
 func NewMoneyFromString(amountStr, currencyStr string) (Money, error) {
+	return NewMoneyFromStringWithScale(amountStr, currencyStr, DefaultMoneyScale)
+}
+
+// NewMoneyFromStringWithScale creates a new instance of Money from string amount, currency, and explicit scale.
+func NewMoneyFromStringWithScale(amountStr, currencyStr string, scale int32) (Money, error) {
 	amount, err := decimal.NewFromString(amountStr)
 	if err != nil {
 		return Money{}, domain.NewErrorWithWrap(err, "invalid amount format")
@@ -46,20 +86,37 @@ func NewMoneyFromString(amountStr, currencyStr string) (Money, error) {
 		return Money{}, err
 	}
 
-	return NewMoney(amount, currency)
+	return NewMoneyWithScale(amount, currency, scale)
 }
 
 // ReconstituteMoney creates a new Money instance without validation
 func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
+	amountMinor, _ := decimalToMinorUnits(amount, DefaultMoneyScale)
+
 	return Money{
-		amount:   amount,
-		currency: currency,
+		amountMinor: amountMinor,
+		currency:    currency,
+		scale:       DefaultMoneyScale,
+	}
+}
+
+// ReconstituteMoneyFromMinorUnits creates a new Money instance from raw fields without validation.
+func ReconstituteMoneyFromMinorUnits(amountMinor int64, currency Currency, scale int32) Money {
+	return Money{
+		amountMinor: amountMinor,
+		currency:    currency,
+		scale:       scale,
 	}
 }
 
 // Amount returns the money amount
 func (m Money) Amount() decimal.Decimal {
-	return m.amount
+	return decimal.New(m.amountMinor, -m.scale)
+}
+
+// AmountMinorUnits returns the canonical integer minor-unit amount.
+func (m Money) AmountMinorUnits() int64 {
+	return m.amountMinor
 }
 
 // Currency returns the money currency
@@ -67,21 +124,27 @@ func (m Money) Currency() Currency {
 	return m.currency
 }
 
+// Scale returns the number of decimal places represented by one major unit.
+func (m Money) Scale() int32 {
+	return m.scale
+}
+
 // Equals compares two Money objects for equality
 func (m Money) Equals(other Money) bool {
-	return m.amount.Equal(other.amount) && m.currency.Equals(other.currency)
+	return m.Amount().Equal(other.Amount()) && m.currency.Equals(other.currency)
 }
 
 // String returns a string representation of the money
 func (m Money) String() string {
-	return fmt.Sprintf("%s %s", m.amount.String(), m.currency.String())
+	return fmt.Sprintf("%s %s", m.Amount().String(), m.currency.String())
 }
 
 // MarshalJSON returns money as an object with a decimal-safe string amount.
 func (m Money) MarshalJSON() ([]byte, error) {
 	return json.Marshal(moneyJSON{
-		Amount:   m.amount.String(),
+		Amount:   m.Amount().StringFixed(m.scale),
 		Currency: m.currency,
+		Scale:    m.scale,
 	})
 }
 
@@ -90,6 +153,7 @@ func (m *Money) UnmarshalJSON(data []byte) error {
 	var raw struct {
 		Amount   json.RawMessage `json:"amount"`
 		Currency Currency        `json:"currency"`
+		Scale    *int32          `json:"scale"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -100,7 +164,12 @@ func (m *Money) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	money, err := NewMoneyFromString(amount, raw.Currency.String())
+	scale := DefaultMoneyScale
+	if raw.Scale != nil {
+		scale = *raw.Scale
+	}
+
+	money, err := NewMoneyFromStringWithScale(amount, raw.Currency.String(), scale)
 	if err != nil {
 		return err
 	}
@@ -119,11 +188,9 @@ func (m Money) Add(other Money) (Money, error) {
 		)
 	}
 
-	newAmount := m.amount.Add(other.amount)
-	return Money{
-		amount:   newAmount,
-		currency: m.currency,
-	}, nil
+	scale := maxScale(m.scale, other.scale)
+	newAmount := m.Amount().Add(other.Amount())
+	return NewMoneyWithScale(newAmount, m.currency, scale)
 }
 
 // Subtract subtracts another Money object from this one (must have same currency)
@@ -136,28 +203,23 @@ func (m Money) Subtract(other Money) (Money, error) {
 		)
 	}
 
-	newAmount := m.amount.Sub(other.amount)
+	scale := maxScale(m.scale, other.scale)
+	newAmount := m.Amount().Sub(other.Amount())
 	if newAmount.IsNegative() {
 		return Money{}, ErrNegativeAmount
 	}
 
-	return Money{
-		amount:   newAmount,
-		currency: m.currency,
-	}, nil
+	return NewMoneyWithScale(newAmount, m.currency, scale)
 }
 
 // Multiply multiplies the money amount by a factor
 func (m Money) Multiply(factor decimal.Decimal) (Money, error) {
-	newAmount := m.amount.Mul(factor)
+	newAmount := m.Amount().Mul(factor)
 	if newAmount.IsNegative() {
 		return Money{}, ErrNegativeAmount
 	}
 
-	return Money{
-		amount:   newAmount,
-		currency: m.currency,
-	}, nil
+	return NewMoneyWithScale(newAmount, m.currency, m.scale)
 }
 
 // Divide divides the money amount by a divisor
@@ -166,21 +228,26 @@ func (m Money) Divide(divisor decimal.Decimal) (Money, error) {
 		return Money{}, domain.NewError("cannot divide by zero")
 	}
 
-	newAmount := m.amount.Div(divisor)
+	newAmount := m.Amount().Div(divisor)
 	if newAmount.IsNegative() {
 		return Money{}, ErrNegativeAmount
 	}
 
-	return Money{
-		amount:   newAmount,
-		currency: m.currency,
-	}, nil
+	return NewMoneyWithScale(newAmount, m.currency, m.scale)
 }
 
 // IsValidMoneyAmount validates a money amount (must not be negative)
 func IsValidMoneyAmount(amount decimal.Decimal) error {
 	if amount.IsNegative() {
 		return ErrNegativeAmount
+	}
+	return nil
+}
+
+// IsValidMoneyScale validates a money scale.
+func IsValidMoneyScale(scale int32) error {
+	if scale < 0 || scale > MaxMoneyScale {
+		return ErrInvalidMoneyScale
 	}
 	return nil
 }
@@ -197,4 +264,42 @@ func decodeMoneyAmount(data json.RawMessage) (string, error) {
 	}
 
 	return number.String(), nil
+}
+
+func decimalToMinorUnits(amount decimal.Decimal, scale int32) (int64, error) {
+	if err := IsValidMoneyScale(scale); err != nil {
+		return 0, err
+	}
+
+	scaled := amount.Shift(scale)
+	if !scaled.IsInteger() {
+		return 0, ErrInvalidMoneyAmountPrecision
+	}
+
+	amountMinor := scaled.BigInt()
+	if !amountMinor.IsInt64() {
+		return 0, ErrMoneyAmountTooLarge
+	}
+
+	return amountMinor.Int64(), nil
+}
+
+func maxScale(first, second int32) int32 {
+	if first > second {
+		return first
+	}
+
+	return second
+}
+
+func checkedMoneyMinorAmount(amount *big.Int) (int64, error) {
+	if !amount.IsInt64() {
+		return 0, ErrMoneyAmountTooLarge
+	}
+
+	if amount.Sign() < 0 {
+		return 0, ErrNegativeAmount
+	}
+
+	return amount.Int64(), nil
 }

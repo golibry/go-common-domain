@@ -67,6 +67,27 @@ func (s *MoneyTestSuite) TestItCanBuildNewMoneyWithValidValues() {
 	}
 }
 
+func (s *MoneyTestSuite) TestItCanBuildNewMoneyFromMinorUnits() {
+	eur, _ := NewCurrency("EUR")
+
+	money, err := NewMoneyFromMinorUnits(1099, eur, 2)
+	s.NoError(err)
+	s.Equal("10.99", money.Amount().String())
+	s.Equal(int64(1099), money.AmountMinorUnits())
+	s.Equal(int32(2), money.Scale())
+	s.Equal("EUR", money.Currency().String())
+}
+
+func (s *MoneyTestSuite) TestItCanBuildNewMoneyWithExplicitScale() {
+	jpy, _ := NewCurrency("JPY")
+
+	money, err := NewMoneyWithScale(decimal.NewFromInt(1000), jpy, 0)
+	s.NoError(err)
+	s.Equal("1000", money.Amount().String())
+	s.Equal(int64(1000), money.AmountMinorUnits())
+	s.Equal(int32(0), money.Scale())
+}
+
 func (s *MoneyTestSuite) TestItFailsToBuildNewMoneyFromInvalidValues() {
 	testCases := []struct {
 		name          string
@@ -105,6 +126,22 @@ func (s *MoneyTestSuite) TestItFailsToBuildNewMoneyFromInvalidValues() {
 			},
 		)
 	}
+}
+
+func (s *MoneyTestSuite) TestItFailsToBuildNewMoneyWithInvalidScaleOrPrecision() {
+	usd, _ := NewCurrency("USD")
+
+	_, err := NewMoneyWithScale(decimal.NewFromFloat(10.999), usd, 2)
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidMoneyAmountPrecision))
+
+	_, err = NewMoneyFromMinorUnits(100, usd, -1)
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidMoneyScale))
+
+	_, err = NewMoneyFromMinorUnits(-100, usd, 2)
+	s.Error(err)
+	s.True(errors.Is(err, ErrNegativeAmount))
 }
 
 func (s *MoneyTestSuite) TestMoneyArithmetic() {
@@ -222,16 +259,23 @@ func (s *MoneyTestSuite) TestJSONSerialization() {
 
 	jsonData, err := json.Marshal(money)
 	s.NoError(err)
-	s.JSONEq(`{"amount":"100.5","currency":"USD"}`, string(jsonData))
+	s.JSONEq(`{"amount":"100.50","currency":"USD","scale":2}`, string(jsonData))
 
 	var decoded Money
 	s.NoError(json.Unmarshal([]byte(`{"amount":"99.99","currency":"eur"}`), &decoded))
 	s.Equal("99.99", decoded.Amount().String())
 	s.Equal("EUR", decoded.Currency().String())
+	s.Equal(int64(9999), decoded.AmountMinorUnits())
+	s.Equal(int32(2), decoded.Scale())
 
 	s.NoError(json.Unmarshal([]byte(`{"amount":42.25,"currency":"gbp"}`), &decoded))
 	s.Equal("42.25", decoded.Amount().String())
 	s.Equal("GBP", decoded.Currency().String())
+
+	s.NoError(json.Unmarshal([]byte(`{"amount":"42.125","currency":"gbp","scale":3}`), &decoded))
+	s.Equal("42.125", decoded.Amount().String())
+	s.Equal(int64(42125), decoded.AmountMinorUnits())
+	s.Equal(int32(3), decoded.Scale())
 }
 
 func (s *MoneyTestSuite) TestJSONSerializationFailsForInvalidValues() {
