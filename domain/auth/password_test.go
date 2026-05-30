@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -223,6 +224,33 @@ func (s *PasswordTestSuite) TestPasswordString() {
 	password, err := NewPassword("MySecure123!@")
 	s.NoError(err)
 	s.Equal("[PROTECTED]", password.String())
+}
+
+func (s *PasswordTestSuite) TestPasswordJSONSerializationFails() {
+	password, err := NewPassword("MySecure123!@")
+	s.NoError(err)
+
+	_, err = json.Marshal(password)
+	s.Error(err)
+	s.True(errors.Is(err, ErrPasswordSerializationUnsupported))
+
+	payload := struct {
+		Password Password `json:"password"`
+	}{
+		Password: password,
+	}
+
+	_, err = json.Marshal(payload)
+	s.Error(err)
+	s.True(errors.Is(err, ErrPasswordSerializationUnsupported))
+}
+
+func (s *PasswordTestSuite) TestPasswordJSONDeserializationFails() {
+	var password Password
+
+	err := json.Unmarshal([]byte(`"MySecure123!@"`), &password)
+	s.Error(err)
+	s.True(errors.Is(err, ErrPasswordSerializationUnsupported))
 }
 
 func (s *PasswordTestSuite) TestReconstitutePassword() {

@@ -37,7 +37,10 @@ var (
 		"password contains invalid characters; only letters, numbers, " +
 			"and standard symbols are allowed",
 	)
-	ErrPasswordVerifyFailed = domain.NewError("failed to verify password")
+	ErrPasswordVerifyFailed             = domain.NewError("failed to verify password")
+	ErrPasswordSerializationUnsupported = domain.NewError(
+		"password does not support automatic serialization",
+	)
 )
 
 // Password represents a secure password value object
@@ -94,6 +97,16 @@ func (p Password) Equals(other Password) bool {
 // String returns a protected string representation of the password
 func (p Password) String() string {
 	return "[PROTECTED]"
+}
+
+// MarshalJSON prevents accidental password serialization.
+func (p Password) MarshalJSON() ([]byte, error) {
+	return nil, ErrPasswordSerializationUnsupported
+}
+
+// UnmarshalJSON prevents accidental password deserialization.
+func (p *Password) UnmarshalJSON(data []byte) error {
+	return ErrPasswordSerializationUnsupported
 }
 
 // ValidatePassword validates a plaintext password against OWASP security standards
