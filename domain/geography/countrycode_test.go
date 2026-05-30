@@ -178,7 +178,27 @@ func (s *CountryCodeTestSuite) TestJSONSerialization() {
 
 	jsonData, err := json.Marshal(countryCode)
 	s.NoError(err)
-	s.JSONEq(`{}`, string(jsonData))
+	s.Equal(`"US"`, string(jsonData))
+
+	var decoded CountryCode
+	s.NoError(json.Unmarshal([]byte(`"ro"`), &decoded))
+	s.Equal("RO", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"ROU"`), &decoded))
+}
+
+func (s *CountryCodeTestSuite) TestTextSerialization() {
+	countryCode, _ := NewCountryCode("us")
+
+	text, err := countryCode.MarshalText()
+	s.NoError(err)
+	s.Equal("US", string(text))
+
+	var decoded CountryCode
+	s.NoError(decoded.UnmarshalText([]byte("ro")))
+	s.Equal("RO", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("ROU")))
 }
 
 func (s *CountryCodeTestSuite) TestReconstitute() {

@@ -1,6 +1,7 @@
 package identifier
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/golibry/go-common-domain/domain"
@@ -61,6 +62,41 @@ func (i IntIdentifier) Equals(other IntIdentifier) bool {
 // String returns a string representation of the identifier
 func (i IntIdentifier) String() string {
 	return strconv.FormatUint(i.value, 10)
+}
+
+// MarshalText returns the identifier as text.
+func (i IntIdentifier) MarshalText() ([]byte, error) {
+	return []byte(i.String()), nil
+}
+
+// UnmarshalText validates text into an IntIdentifier.
+func (i *IntIdentifier) UnmarshalText(text []byte) error {
+	identifier, err := NewIntIdentifierFromString(string(text))
+	if err != nil {
+		return err
+	}
+
+	*i = identifier
+	return nil
+}
+
+// MarshalJSON returns the identifier as a JSON number.
+func (i IntIdentifier) MarshalJSON() ([]byte, error) {
+	return []byte(i.String()), nil
+}
+
+// UnmarshalJSON validates a JSON number or numeric string into an IntIdentifier.
+func (i *IntIdentifier) UnmarshalJSON(data []byte) error {
+	var raw json.Number
+	if err := json.Unmarshal(data, &raw); err != nil {
+		var text string
+		if textErr := json.Unmarshal(data, &text); textErr != nil {
+			return ErrInvalidIdentifier
+		}
+		raw = json.Number(text)
+	}
+
+	return i.UnmarshalText([]byte(raw.String()))
 }
 
 // IsValidIntIdentifier validates an identifier (must be positive and non-zero)

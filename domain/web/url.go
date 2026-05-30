@@ -53,6 +53,22 @@ func (p URL) String() string {
 	return p.value
 }
 
+// MarshalText returns the normalized URL as text.
+func (u URL) MarshalText() ([]byte, error) {
+	return []byte(u.value), nil
+}
+
+// UnmarshalText validates and normalizes text into a URL.
+func (u *URL) UnmarshalText(text []byte) error {
+	urlValue, err := NewURL(string(text))
+	if err != nil {
+		return err
+	}
+
+	*u = urlValue
+	return nil
+}
+
 // Parsed returns the URL representation of the raw url string (value)
 func (u URL) Parsed() url.URL {
 	parsed, _ := url.Parse(u.value)

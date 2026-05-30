@@ -58,6 +58,22 @@ func (p PhoneNumber) String() string {
 	return p.value
 }
 
+// MarshalText returns the normalized phone number as text.
+func (p PhoneNumber) MarshalText() ([]byte, error) {
+	return []byte(p.value), nil
+}
+
+// UnmarshalText validates and normalizes text into a PhoneNumber.
+func (p *PhoneNumber) UnmarshalText(text []byte) error {
+	phoneNumber, err := NewPhoneNumber(string(text))
+	if err != nil {
+		return err
+	}
+
+	*p = phoneNumber
+	return nil
+}
+
 // NormalizePhoneNumber normalizes a phone number by removing spaces, dashes, parentheses, and dots
 func NormalizePhoneNumber(phoneNumber string) (string, error) {
 	// Trim spaces from the beginning and end

@@ -321,7 +321,27 @@ func (s *EmailTestSuite) TestJSONSerialization() {
 	email, _ := NewEmail("test@example.com")
 	jsonData, err := json.Marshal(email)
 	s.NoError(err)
-	s.JSONEq(`{}`, string(jsonData))
+	s.Equal(`"test@example.com"`, string(jsonData))
+
+	var decoded Email
+	s.NoError(json.Unmarshal([]byte(`"USER@Example.COM"`), &decoded))
+	s.Equal("user@example.com", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"invalid-email"`), &decoded))
+}
+
+func (s *EmailTestSuite) TestTextSerialization() {
+	email, _ := NewEmail("USER@Example.COM")
+
+	text, err := email.MarshalText()
+	s.NoError(err)
+	s.Equal("user@example.com", string(text))
+
+	var decoded Email
+	s.NoError(decoded.UnmarshalText([]byte("USER@Example.COM")))
+	s.Equal("user@example.com", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("invalid-email")))
 }
 
 func (s *EmailTestSuite) TestReconstitute() {

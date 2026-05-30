@@ -1,6 +1,7 @@
 package identifier
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -152,6 +153,41 @@ func (s *IdentifierTestSuite) TestEquals() {
 func (s *IdentifierTestSuite) TestString() {
 	identifier, _ := NewIntIdentifier(12345)
 	s.Equal("12345", identifier.String())
+}
+
+func (s *IdentifierTestSuite) TestJSONSerialization() {
+	identifier, _ := NewIntIdentifier(12345)
+
+	jsonData, err := json.Marshal(identifier)
+	s.NoError(err)
+	s.Equal(`12345`, string(jsonData))
+
+	var decoded IntIdentifier
+	s.NoError(json.Unmarshal([]byte(`456`), &decoded))
+	s.Equal(uint64(456), decoded.Value())
+
+	s.NoError(json.Unmarshal([]byte(`"789"`), &decoded))
+	s.Equal(uint64(789), decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`0`), &decoded))
+	s.Error(json.Unmarshal([]byte(`-1`), &decoded))
+	s.Error(json.Unmarshal([]byte(`"abc"`), &decoded))
+}
+
+func (s *IdentifierTestSuite) TestTextSerialization() {
+	identifier, _ := NewIntIdentifier(12345)
+
+	text, err := identifier.MarshalText()
+	s.NoError(err)
+	s.Equal("12345", string(text))
+
+	var decoded IntIdentifier
+	s.NoError(decoded.UnmarshalText([]byte("456")))
+	s.Equal(uint64(456), decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("0")))
+	s.Error(decoded.UnmarshalText([]byte("-1")))
+	s.Error(decoded.UnmarshalText([]byte("abc")))
 }
 
 func (s *IdentifierTestSuite) TestReconstitute() {

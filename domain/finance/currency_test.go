@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -175,6 +176,34 @@ func (s *CurrencyTestSuite) TestEquals() {
 func (s *CurrencyTestSuite) TestString() {
 	currency, _ := NewCurrency("usd")
 	s.Equal("USD", currency.String())
+}
+
+func (s *CurrencyTestSuite) TestJSONSerialization() {
+	currency, _ := NewCurrency("usd")
+
+	jsonData, err := json.Marshal(currency)
+	s.NoError(err)
+	s.Equal(`"USD"`, string(jsonData))
+
+	var decoded Currency
+	s.NoError(json.Unmarshal([]byte(`"eur"`), &decoded))
+	s.Equal("EUR", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"EURO"`), &decoded))
+}
+
+func (s *CurrencyTestSuite) TestTextSerialization() {
+	currency, _ := NewCurrency("usd")
+
+	text, err := currency.MarshalText()
+	s.NoError(err)
+	s.Equal("USD", string(text))
+
+	var decoded Currency
+	s.NoError(decoded.UnmarshalText([]byte("eur")))
+	s.Equal("EUR", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("EURO")))
 }
 
 func (s *CurrencyTestSuite) TestReconstitute() {

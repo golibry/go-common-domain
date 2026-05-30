@@ -52,6 +52,22 @@ func (c Currency) String() string {
 	return c.value
 }
 
+// MarshalText returns the normalized currency code as text.
+func (c Currency) MarshalText() ([]byte, error) {
+	return []byte(c.value), nil
+}
+
+// UnmarshalText validates and normalizes text into a Currency.
+func (c *Currency) UnmarshalText(text []byte) error {
+	currency, err := NewCurrency(string(text))
+	if err != nil {
+		return err
+	}
+
+	*c = currency
+	return nil
+}
+
 // NormalizeCurrency normalizes a currency by trimming spaces and converting to uppercase
 func NormalizeCurrency(currency string) (string, error) {
 	// Trim spaces and convert to uppercase

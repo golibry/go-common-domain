@@ -64,6 +64,22 @@ func (ip IPAddress) String() string {
 	return ip.value
 }
 
+// MarshalText returns the normalized IP address as text.
+func (ip IPAddress) MarshalText() ([]byte, error) {
+	return []byte(ip.value), nil
+}
+
+// UnmarshalText validates and normalizes text into an IPAddress.
+func (ip *IPAddress) UnmarshalText(text []byte) error {
+	ipAddress, err := NewIPAddress(string(text))
+	if err != nil {
+		return err
+	}
+
+	*ip = ipAddress
+	return nil
+}
+
 // NormalizeIPAddress normalizes an IP address by trimming spaces and standardizing format
 func NormalizeIPAddress(ipAddress string) (string, error) {
 	// Trim spaces from the beginning and end

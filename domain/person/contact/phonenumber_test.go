@@ -193,7 +193,27 @@ func (s *PhoneNumberTestSuite) TestJSONSerialization() {
 
 	jsonData, err := json.Marshal(phoneNumber)
 	s.NoError(err)
-	s.JSONEq(`{}`, string(jsonData))
+	s.Equal(`"+1234567890"`, string(jsonData))
+
+	var decoded PhoneNumber
+	s.NoError(json.Unmarshal([]byte(`"+1 (234) 567-890"`), &decoded))
+	s.Equal("+1234567890", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"12"`), &decoded))
+}
+
+func (s *PhoneNumberTestSuite) TestTextSerialization() {
+	phoneNumber, _ := NewPhoneNumber("+1 (234) 567-890")
+
+	text, err := phoneNumber.MarshalText()
+	s.NoError(err)
+	s.Equal("+1234567890", string(text))
+
+	var decoded PhoneNumber
+	s.NoError(decoded.UnmarshalText([]byte("+1.234.567.890")))
+	s.Equal("+1234567890", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("12")))
 }
 
 func (s *PhoneNumberTestSuite) TestReconstitute() {

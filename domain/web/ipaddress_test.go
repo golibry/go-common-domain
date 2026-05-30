@@ -308,9 +308,30 @@ func (s *IPAddressTestSuite) TestString() {
 
 func (s *IPAddressTestSuite) TestJSONSerialization() {
 	ip, _ := NewIPAddress("192.168.1.1")
-	data, err := json.Marshal(ip)
+
+	jsonData, err := json.Marshal(ip)
 	s.NoError(err)
-	s.JSONEq(`{}`, string(data))
+	s.Equal(`"192.168.1.1"`, string(jsonData))
+
+	var decoded IPAddress
+	s.NoError(json.Unmarshal([]byte(`"192.168.001.001"`), &decoded))
+	s.Equal("192.168.1.1", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"not.an.ip"`), &decoded))
+}
+
+func (s *IPAddressTestSuite) TestTextSerialization() {
+	ip, _ := NewIPAddress("192.168.001.001")
+
+	text, err := ip.MarshalText()
+	s.NoError(err)
+	s.Equal("192.168.1.1", string(text))
+
+	var decoded IPAddress
+	s.NoError(decoded.UnmarshalText([]byte("2001:0db8:0000:0000:0000:0000:0000:0001")))
+	s.Equal("2001:db8::1", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("not.an.ip")))
 }
 
 func (s *IPAddressTestSuite) TestReconstitute() {

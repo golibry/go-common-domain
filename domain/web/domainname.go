@@ -66,6 +66,22 @@ func (d DomainName) String() string {
 	return d.value
 }
 
+// MarshalText returns the normalized domain name as text.
+func (d DomainName) MarshalText() ([]byte, error) {
+	return []byte(d.value), nil
+}
+
+// UnmarshalText validates and normalizes text into a DomainName.
+func (d *DomainName) UnmarshalText(text []byte) error {
+	domainName, err := NewDomainName(string(text))
+	if err != nil {
+		return err
+	}
+
+	*d = domainName
+	return nil
+}
+
 // NormalizeDomainName normalizes a domain name by converting to lowercase and trimming spaces
 func NormalizeDomainName(domainName string) (string, error) {
 	// Trim spaces from the beginning and end

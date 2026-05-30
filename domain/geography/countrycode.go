@@ -52,6 +52,22 @@ func (c CountryCode) String() string {
 	return c.value
 }
 
+// MarshalText returns the normalized country code as text.
+func (c CountryCode) MarshalText() ([]byte, error) {
+	return []byte(c.value), nil
+}
+
+// UnmarshalText validates and normalizes text into a CountryCode.
+func (c *CountryCode) UnmarshalText(text []byte) error {
+	countryCode, err := NewCountryCode(string(text))
+	if err != nil {
+		return err
+	}
+
+	*c = countryCode
+	return nil
+}
+
 // NormalizeCountryCode normalizes a country code by trimming spaces and converting to uppercase
 func NormalizeCountryCode(countryCode string) (string, error) {
 	// Trim spaces and convert to uppercase

@@ -239,7 +239,27 @@ func (s *DomainNameTestSuite) TestJSONSerialization() {
 
 	jsonData, err := json.Marshal(domain)
 	s.NoError(err)
-	s.JSONEq(`{}`, string(jsonData))
+	s.Equal(`"example.com"`, string(jsonData))
+
+	var decoded DomainName
+	s.NoError(json.Unmarshal([]byte(`"EXAMPLE.COM"`), &decoded))
+	s.Equal("example.com", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"invalid..domain"`), &decoded))
+}
+
+func (s *DomainNameTestSuite) TestTextSerialization() {
+	domain, _ := NewDomainName("EXAMPLE.COM")
+
+	text, err := domain.MarshalText()
+	s.NoError(err)
+	s.Equal("example.com", string(text))
+
+	var decoded DomainName
+	s.NoError(decoded.UnmarshalText([]byte("EXAMPLE.COM")))
+	s.Equal("example.com", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("invalid..domain")))
 }
 
 func (s *DomainNameTestSuite) TestReconstitute() {

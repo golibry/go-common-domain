@@ -89,6 +89,22 @@ func (e Email) String() string {
 	return e.value
 }
 
+// MarshalText returns the normalized email address as text.
+func (e Email) MarshalText() ([]byte, error) {
+	return []byte(e.value), nil
+}
+
+// UnmarshalText validates and normalizes text into an Email.
+func (e *Email) UnmarshalText(text []byte) error {
+	email, err := NewEmail(string(text))
+	if err != nil {
+		return err
+	}
+
+	*e = email
+	return nil
+}
+
 // NormalizeEmail normalizes an email address by converting to lowercase and trimming spaces
 func NormalizeEmail(email string) (string, error) {
 	// Trim spaces from the beginning and end

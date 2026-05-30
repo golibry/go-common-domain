@@ -176,9 +176,29 @@ func (s *URLTestSuite) TestValue() {
 func (s *URLTestSuite) TestJSONSerialization() {
 	url, _ := NewURL("https://example.com")
 
-	jsonData, err := json.Marshal(url.Value())
+	jsonData, err := json.Marshal(url)
 	s.NoError(err)
 	s.Equal(`"https://example.com"`, string(jsonData))
+
+	var decoded URL
+	s.NoError(json.Unmarshal([]byte(`" https://example.com/path "`), &decoded))
+	s.Equal("https://example.com/path", decoded.Value())
+
+	s.Error(json.Unmarshal([]byte(`"example.com"`), &decoded))
+}
+
+func (s *URLTestSuite) TestTextSerialization() {
+	url, _ := NewURL(" https://example.com ")
+
+	text, err := url.MarshalText()
+	s.NoError(err)
+	s.Equal("https://example.com", string(text))
+
+	var decoded URL
+	s.NoError(decoded.UnmarshalText([]byte(" https://example.com/path ")))
+	s.Equal("https://example.com/path", decoded.Value())
+
+	s.Error(decoded.UnmarshalText([]byte("example.com")))
 }
 
 func (s *URLTestSuite) TestReconstitute() {
