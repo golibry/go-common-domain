@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -214,6 +215,70 @@ func (s *MoneyTestSuite) TestString() {
 	usd, _ := NewCurrency("USD")
 	money, _ := NewMoney(decimal.NewFromFloat(100.50), usd)
 	s.Equal("100.5 USD", money.String())
+}
+
+func (s *MoneyTestSuite) TestJSONSerialization() {
+	money, _ := NewMoneyFromString("100.50", "usd")
+
+	jsonData, err := json.Marshal(money)
+	s.NoError(err)
+	s.JSONEq(`{"amount":"100.5","currency":"USD"}`, string(jsonData))
+
+	var decoded Money
+	s.NoError(json.Unmarshal([]byte(`{"amount":"99.99","currency":"eur"}`), &decoded))
+	s.Equal("99.99", decoded.Amount().String())
+	s.Equal("EUR", decoded.Currency().String())
+
+	s.NoError(json.Unmarshal([]byte(`{"amount":42.25,"currency":"gbp"}`), &decoded))
+	s.Equal("42.25", decoded.Amount().String())
+	s.Equal("GBP", decoded.Currency().String())
+}
+
+func (s *MoneyTestSuite) TestJSONSerializationFailsForInvalidValues() {
+	testCases := []struct {
+		name          string
+		jsonData      string
+		expectedError error
+	}{
+		{
+			name:          "negative amount",
+			jsonData:      `{"amount":"-1","currency":"USD"}`,
+			expectedError: ErrNegativeAmount,
+		},
+		{
+			name:          "invalid amount",
+			jsonData:      `{"amount":"abc","currency":"USD"}`,
+			expectedError: nil,
+		},
+		{
+			name:          "invalid currency",
+			jsonData:      `{"amount":"1","currency":"USDD"}`,
+			expectedError: ErrInvalidCurrency,
+		},
+		{
+			name:          "missing amount",
+			jsonData:      `{"currency":"USD"}`,
+			expectedError: nil,
+		},
+		{
+			name:          "missing currency",
+			jsonData:      `{"amount":"1"}`,
+			expectedError: ErrEmptyCurrency,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(
+			tc.name, func() {
+				var decoded Money
+				err := json.Unmarshal([]byte(tc.jsonData), &decoded)
+				s.Error(err)
+				if tc.expectedError != nil {
+					s.True(errors.Is(err, tc.expectedError))
+				}
+			},
+		)
+	}
 }
 
 func (s *MoneyTestSuite) TestReconstitute() {

@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/golibry/go-common-domain/domain"
@@ -14,6 +15,11 @@ var (
 type Money struct {
 	amount   decimal.Decimal
 	currency Currency
+}
+
+type moneyJSON struct {
+	Amount   string   `json:"amount"`
+	Currency Currency `json:"currency"`
 }
 
 // NewMoney creates a new instance of Money with validation
@@ -69,6 +75,38 @@ func (m Money) Equals(other Money) bool {
 // String returns a string representation of the money
 func (m Money) String() string {
 	return fmt.Sprintf("%s %s", m.amount.String(), m.currency.String())
+}
+
+// MarshalJSON returns money as an object with a decimal-safe string amount.
+func (m Money) MarshalJSON() ([]byte, error) {
+	return json.Marshal(moneyJSON{
+		Amount:   m.amount.String(),
+		Currency: m.currency,
+	})
+}
+
+// UnmarshalJSON validates and normalizes a JSON money object.
+func (m *Money) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		Amount   json.RawMessage `json:"amount"`
+		Currency Currency        `json:"currency"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	amount, err := decodeMoneyAmount(raw.Amount)
+	if err != nil {
+		return err
+	}
+
+	money, err := NewMoneyFromString(amount, raw.Currency.String())
+	if err != nil {
+		return err
+	}
+
+	*m = money
+	return nil
 }
 
 // Add adds another Money object to this one (must have the same currency)
@@ -145,4 +183,18 @@ func IsValidMoneyAmount(amount decimal.Decimal) error {
 		return ErrNegativeAmount
 	}
 	return nil
+}
+
+func decodeMoneyAmount(data json.RawMessage) (string, error) {
+	var amount string
+	if err := json.Unmarshal(data, &amount); err == nil {
+		return amount, nil
+	}
+
+	var number json.Number
+	if err := json.Unmarshal(data, &number); err != nil {
+		return "", domain.NewErrorWithWrap(err, "invalid amount format")
+	}
+
+	return number.String(), nil
 }
