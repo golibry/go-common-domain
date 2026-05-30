@@ -379,5 +379,29 @@ func (s *MoneyTestSuite) TestReconstitute() {
 	money := ReconstituteMoney(amount, usd)
 
 	s.Equal("100.5", money.Amount().String())
+	s.Equal(int64(10050), money.AmountMinorUnits())
 	s.Equal("USD", money.Currency().String())
+	s.Equal(int32(DefaultMoneyScale), money.Scale())
+}
+
+func (s *MoneyTestSuite) TestReconstituteRoundsToDefaultScale() {
+	usd, _ := NewCurrency("USD")
+	amount := decimal.RequireFromString("10.999")
+
+	money := ReconstituteMoney(amount, usd)
+
+	s.Equal("11", money.Amount().String())
+	s.Equal(int64(1100), money.AmountMinorUnits())
+	s.Equal(int32(DefaultMoneyScale), money.Scale())
+}
+
+func (s *MoneyTestSuite) TestReconstituteFromMinorUnits() {
+	kwd, _ := NewCurrency("KWD")
+
+	money := ReconstituteMoneyFromMinorUnits(10999, kwd, 3)
+
+	s.Equal("10.999", money.Amount().String())
+	s.Equal(int64(10999), money.AmountMinorUnits())
+	s.Equal("KWD", money.Currency().String())
+	s.Equal(int32(3), money.Scale())
 }

@@ -89,8 +89,10 @@ func NewMoneyFromStringWithScale(amountStr, currencyStr string, scale int32) (Mo
 	return NewMoneyWithScale(amount, currency, scale)
 }
 
-// ReconstituteMoney creates a new Money instance without validation
+// ReconstituteMoney creates a new Money instance without validation.
+// Amounts are rounded half-up to the default scale before being stored as minor units.
 func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
+	amount = amount.Round(DefaultMoneyScale)
 	amountMinor, _ := decimalToMinorUnits(amount, DefaultMoneyScale)
 
 	return Money{
