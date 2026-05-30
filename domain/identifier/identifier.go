@@ -29,6 +29,10 @@ func NewIntIdentifier(value uint64) (IntIdentifier, error) {
 
 // NewIntIdentifierFromInt creates a new instance of IntIdentifier from int64
 func NewIntIdentifierFromInt(value int64) (IntIdentifier, error) {
+	if value < 0 {
+		return IntIdentifier{}, ErrInvalidIdentifier
+	}
+
 	return NewIntIdentifier(uint64(value))
 }
 

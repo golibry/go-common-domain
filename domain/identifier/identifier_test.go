@@ -57,6 +57,40 @@ func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierWithValidValues() {
 	}
 }
 
+func (s *IdentifierTestSuite) TestItCanBuildNewIdentifierFromIntWithValidValues() {
+	testCases := []struct {
+		name     string
+		input    int64
+		expected uint64
+	}{
+		{
+			name:     "small positive number",
+			input:    1,
+			expected: 1,
+		},
+		{
+			name:     "medium positive number",
+			input:    12345,
+			expected: 12345,
+		},
+		{
+			name:     "max int64",
+			input:    9223372036854775807,
+			expected: 9223372036854775807,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(
+			tc.name, func() {
+				identifier, err := NewIntIdentifierFromInt(tc.input)
+				s.NoError(err)
+				s.Equal(tc.expected, identifier.Value())
+			},
+		)
+	}
+}
+
 func (s *IdentifierTestSuite) TestItFailsToBuildNewIdentifierFromInvalidValues() {
 	testCases := []struct {
 		name          string
@@ -67,6 +101,16 @@ func (s *IdentifierTestSuite) TestItFailsToBuildNewIdentifierFromInvalidValues()
 			name:          "zero identifier",
 			input:         0,
 			expectedError: ErrZeroIdentifier,
+		},
+		{
+			name:          "negative identifier",
+			input:         -1,
+			expectedError: ErrInvalidIdentifier,
+		},
+		{
+			name:          "large negative identifier",
+			input:         -9223372036854775808,
+			expectedError: ErrInvalidIdentifier,
 		},
 	}
 
