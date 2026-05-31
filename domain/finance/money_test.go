@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 )
@@ -424,6 +425,16 @@ func (s *MoneyTestSuite) TestJSONSerializationFailsForInvalidValues() {
 			name:          "missing currency",
 			jsonData:      `{"amount":"1"}`,
 			expectedError: ErrMissingMoneyCurrency,
+		},
+		{
+			name:          "null money",
+			jsonData:      `null`,
+			expectedError: domain.ErrNullValue,
+		},
+		{
+			name:          "null amount",
+			jsonData:      `{"amount":null,"currency":"USD"}`,
+			expectedError: domain.ErrNullValue,
 		},
 	}
 

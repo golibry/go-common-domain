@@ -114,6 +114,10 @@ func (f FullName) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON validates and normalizes a JSON full name object.
 func (f *FullName) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
 	var raw fullNameJSON
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err

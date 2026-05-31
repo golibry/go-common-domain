@@ -134,6 +134,10 @@ func (p Password) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON prevents accidental password deserialization.
 func (p *Password) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
 	return ErrPasswordSerializationUnsupported
 }
 

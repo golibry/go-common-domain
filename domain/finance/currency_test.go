@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -237,6 +238,14 @@ func (s *CurrencyTestSuite) TestJSONSerialization() {
 	s.Equal("EUR", decoded.Value())
 
 	s.Error(json.Unmarshal([]byte(`"EURO"`), &decoded))
+}
+
+func (s *CurrencyTestSuite) TestJSONSerializationFailsForNull() {
+	var decoded Currency
+	err := json.Unmarshal([]byte(`null`), &decoded)
+
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *CurrencyTestSuite) TestTextSerialization() {

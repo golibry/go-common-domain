@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -103,6 +104,20 @@ func (e *Email) UnmarshalText(text []byte) error {
 
 	*e = email
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON email string.
+func (e *Email) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidEmailFormat
+	}
+
+	return e.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into an Email.

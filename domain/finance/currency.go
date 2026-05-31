@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 
@@ -229,6 +230,20 @@ func (c *Currency) UnmarshalText(text []byte) error {
 
 	*c = currency
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON currency string.
+func (c *Currency) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidCurrency
+	}
+
+	return c.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into a Currency.

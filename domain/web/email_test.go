@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -328,6 +329,14 @@ func (s *EmailTestSuite) TestJSONSerialization() {
 	s.Equal("user@example.com", decoded.Value())
 
 	s.Error(json.Unmarshal([]byte(`"invalid-email"`), &decoded))
+}
+
+func (s *EmailTestSuite) TestJSONSerializationFailsForNull() {
+	var decoded Email
+	err := json.Unmarshal([]byte(`null`), &decoded)
+
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *EmailTestSuite) TestTextSerialization() {

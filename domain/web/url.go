@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -67,6 +68,20 @@ func (u *URL) UnmarshalText(text []byte) error {
 
 	*u = urlValue
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON URL string.
+func (u *URL) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidURL
+	}
+
+	return u.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into a URL.

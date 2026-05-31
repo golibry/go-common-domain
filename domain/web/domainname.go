@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -80,6 +81,20 @@ func (d *DomainName) UnmarshalText(text []byte) error {
 
 	*d = domainName
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON domain name string.
+func (d *DomainName) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidDomainFormat
+	}
+
+	return d.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into a DomainName.

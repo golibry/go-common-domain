@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -272,6 +273,10 @@ func (s *PasswordTestSuite) TestPasswordJSONDeserializationFails() {
 	err := json.Unmarshal([]byte(`"MySecure123!@"`), &password)
 	s.Error(err)
 	s.True(errors.Is(err, ErrPasswordSerializationUnsupported))
+
+	err = json.Unmarshal([]byte(`null`), &password)
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *PasswordTestSuite) TestReconstitutePassword() {

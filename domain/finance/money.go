@@ -165,6 +165,10 @@ func (m Money) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON validates and normalizes a JSON money object.
 func (m *Money) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
 	var raw struct {
 		Amount   json.RawMessage `json:"amount"`
 		Currency Currency        `json:"currency"`
@@ -286,6 +290,10 @@ func IsValidMoneyScale(scale int32) error {
 }
 
 func decodeMoneyAmount(data json.RawMessage) (string, error) {
+	if string(data) == "null" {
+		return "", domain.ErrNullValue
+	}
+
 	var amount string
 	if err := json.Unmarshal(data, &amount); err == nil {
 		return amount, nil

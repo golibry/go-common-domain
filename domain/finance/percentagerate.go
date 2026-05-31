@@ -124,6 +124,10 @@ func (r PercentageRate) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON validates and normalizes a JSON percentage string or number.
 func (r *PercentageRate) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
 		var number json.Number

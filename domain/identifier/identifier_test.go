@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -216,6 +217,14 @@ func (s *IdentifierTestSuite) TestJSONSerialization() {
 	s.Error(json.Unmarshal([]byte(`0`), &decoded))
 	s.Error(json.Unmarshal([]byte(`-1`), &decoded))
 	s.Error(json.Unmarshal([]byte(`"abc"`), &decoded))
+}
+
+func (s *IdentifierTestSuite) TestJSONSerializationFailsForNull() {
+	var decoded IntIdentifier
+	err := json.Unmarshal([]byte(`null`), &decoded)
+
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *IdentifierTestSuite) TestTextSerialization() {

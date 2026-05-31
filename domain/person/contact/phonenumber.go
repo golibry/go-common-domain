@@ -1,6 +1,7 @@
 package contact
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"unicode"
@@ -72,6 +73,20 @@ func (p *PhoneNumber) UnmarshalText(text []byte) error {
 
 	*p = phoneNumber
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON phone number string.
+func (p *PhoneNumber) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidPhoneNumberChars
+	}
+
+	return p.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into a PhoneNumber.

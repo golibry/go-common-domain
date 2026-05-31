@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -138,6 +139,14 @@ func (s *PercentageRateTestSuite) TestJSONSerialization() {
 	s.Equal(int64(1950), decoded.BasisPoints())
 
 	s.Error(json.Unmarshal([]byte(`"0.001"`), &decoded))
+}
+
+func (s *PercentageRateTestSuite) TestJSONSerializationFailsForNull() {
+	var decoded PercentageRate
+	err := json.Unmarshal([]byte(`null`), &decoded)
+
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *PercentageRateTestSuite) TestTextSerialization() {

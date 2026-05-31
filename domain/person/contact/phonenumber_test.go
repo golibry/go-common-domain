@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -200,6 +201,14 @@ func (s *PhoneNumberTestSuite) TestJSONSerialization() {
 	s.Equal("+1234567890", decoded.Value())
 
 	s.Error(json.Unmarshal([]byte(`"12"`), &decoded))
+}
+
+func (s *PhoneNumberTestSuite) TestJSONSerializationFailsForNull() {
+	var decoded PhoneNumber
+	err := json.Unmarshal([]byte(`null`), &decoded)
+
+	s.Error(err)
+	s.True(errors.Is(err, domain.ErrNullValue))
 }
 
 func (s *PhoneNumberTestSuite) TestTextSerialization() {

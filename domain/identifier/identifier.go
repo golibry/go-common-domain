@@ -91,6 +91,10 @@ func (i IntIdentifier) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON validates a JSON number or numeric string into an IntIdentifier.
 func (i *IntIdentifier) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
 	var raw json.Number
 	if err := json.Unmarshal(data, &raw); err != nil {
 		var text string

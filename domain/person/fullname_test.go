@@ -222,6 +222,11 @@ func (s *FullNameTestSuite) TestJSONSerializationFailsForInvalidValues() {
 			jsonData:      `{"firstName":"John"}`,
 			expectedError: ErrMissingLastName,
 		},
+		{
+			name:          "null full name",
+			jsonData:      `null`,
+			expectedError: domain.ErrNullValue,
+		},
 	}
 
 	for _, tc := range testCases {

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net"
 	"strings"
 
@@ -78,6 +79,20 @@ func (ip *IPAddress) UnmarshalText(text []byte) error {
 
 	*ip = ipAddress
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON IP address string.
+func (ip *IPAddress) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidIPAddress
+	}
+
+	return ip.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into an IPAddress.

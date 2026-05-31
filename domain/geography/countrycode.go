@@ -1,6 +1,7 @@
 package geography
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 
@@ -66,6 +67,20 @@ func (c *CountryCode) UnmarshalText(text []byte) error {
 
 	*c = countryCode
 	return nil
+}
+
+// UnmarshalJSON validates and normalizes a JSON country code string.
+func (c *CountryCode) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return domain.ErrNullValue
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return ErrInvalidCountryCode
+	}
+
+	return c.UnmarshalText([]byte(value))
 }
 
 // Scan validates and normalizes a database value into a CountryCode.
