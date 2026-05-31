@@ -92,6 +92,31 @@ func (p Password) HashedValue() string {
 	return p.hashedValue
 }
 
+// Cost returns the bcrypt cost embedded in the stored hash.
+func (p Password) Cost() (int, error) {
+	cost, err := bcrypt.Cost([]byte(p.hashedValue))
+	if err != nil {
+		return 0, ErrInvalidPasswordHash
+	}
+
+	return cost, nil
+}
+
+// NeedsRehash reports whether the stored hash should be upgraded to BcryptCost.
+func (p Password) NeedsRehash() bool {
+	return p.NeedsRehashWithCost(BcryptCost)
+}
+
+// NeedsRehashWithCost reports whether the stored hash should be upgraded to the provided cost.
+func (p Password) NeedsRehashWithCost(cost int) bool {
+	currentCost, err := p.Cost()
+	if err != nil {
+		return true
+	}
+
+	return currentCost < cost
+}
+
 // Value returns the hashed password for database storage.
 func (p Password) Value() (driver.Value, error) {
 	return p.hashedValue, nil

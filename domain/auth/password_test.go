@@ -8,6 +8,7 @@ import (
 
 	"github.com/golibry/go-common-domain/domain"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type PasswordTestSuite struct {
@@ -354,4 +355,41 @@ func (s *PasswordTestSuite) TestPasswordHashingConsistency() {
 	// But both should verify correctly
 	s.NoError(password1.Verify(plaintext))
 	s.NoError(password2.Verify(plaintext))
+}
+
+func (s *PasswordTestSuite) TestCost() {
+	password, err := NewPassword("MySecure123!@")
+	s.NoError(err)
+
+	cost, err := password.Cost()
+	s.NoError(err)
+	s.Equal(BcryptCost, cost)
+}
+
+func (s *PasswordTestSuite) TestCostFailsForInvalidHash() {
+	password := ReconstitutePassword("not-a-bcrypt-hash")
+
+	cost, err := password.Cost()
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidPasswordHash))
+	s.Equal(0, cost)
+}
+
+func (s *PasswordTestSuite) TestNeedsRehash() {
+	plaintext := "MySecure123!@"
+	password, err := NewPassword(plaintext)
+	s.NoError(err)
+
+	s.False(password.NeedsRehash())
+	s.False(password.NeedsRehashWithCost(BcryptCost))
+	s.True(password.NeedsRehashWithCost(BcryptCost + 1))
+
+	lowerCostHash, err := bcrypt.GenerateFromPassword([]byte(plaintext), BcryptCost-1)
+	s.NoError(err)
+
+	lowerCostPassword := ReconstitutePassword(string(lowerCostHash))
+	s.True(lowerCostPassword.NeedsRehash())
+
+	invalidPassword := ReconstitutePassword("not-a-bcrypt-hash")
+	s.True(invalidPassword.NeedsRehash())
 }
