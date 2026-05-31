@@ -15,8 +15,8 @@ Coverage by folder:
 
 - `auth/password`: password validation, verification, protected string output, and database hash scan/value.
 - `domain/error`: wrapped domain errors and `errors.Is`.
-- `finance/currency`: currency normalization and database scan.
-- `finance/money`: minor-unit money, arithmetic, rounding, JSON, relational reconstitution, and percentage rates.
+- `finance/currency`: currency normalization, minor-unit metadata, and database scan.
+- `finance/money`: inferred currency scale, minor-unit money, arithmetic, rounding, JSON, relational reconstitution, and percentage rates.
 - `finance/percentagerate`: basis-point rates, money application, and canonical basis-point database scan/value.
 - `geography/countrycode`: country-code normalization.
 - `identifier`: integer identifiers from numbers, strings, and database values.

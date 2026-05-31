@@ -37,7 +37,7 @@ type moneyJSON struct {
 
 // NewMoney creates a new instance of Money with validation
 func NewMoney(amount decimal.Decimal, currency Currency) (Money, error) {
-	return NewMoneyWithScale(amount, currency, DefaultMoneyScale)
+	return NewMoneyWithScale(amount, currency, moneyScaleForCurrency(currency))
 }
 
 // NewMoneyWithScale creates a new instance of Money with validation and explicit minor-unit scale.
@@ -73,7 +73,17 @@ func NewMoneyFromMinorUnits(amountMinor int64, currency Currency, scale int32) (
 
 // NewMoneyFromString creates a new instance of Money from string amount and currency
 func NewMoneyFromString(amountStr, currencyStr string) (Money, error) {
-	return NewMoneyFromStringWithScale(amountStr, currencyStr, DefaultMoneyScale)
+	currency, err := NewCurrency(currencyStr)
+	if err != nil {
+		return Money{}, err
+	}
+
+	amount, err := decimal.NewFromString(amountStr)
+	if err != nil {
+		return Money{}, domain.NewErrorWithWrap(err, "invalid amount format")
+	}
+
+	return NewMoneyWithScale(amount, currency, moneyScaleForCurrency(currency))
 }
 
 // NewMoneyFromStringWithScale creates a new instance of Money from string amount, currency, and explicit scale.
@@ -94,13 +104,14 @@ func NewMoneyFromStringWithScale(amountStr, currencyStr string, scale int32) (Mo
 // ReconstituteMoney creates a new Money instance without validation.
 // Amounts are rounded half-up to the default scale before being stored as minor units.
 func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
-	amount = amount.Round(DefaultMoneyScale)
-	amountMinor, _ := decimalToMinorUnits(amount, DefaultMoneyScale)
+	scale := moneyScaleForCurrency(currency)
+	amount = amount.Round(scale)
+	amountMinor, _ := decimalToMinorUnits(amount, scale)
 
 	return Money{
 		amountMinor: amountMinor,
 		currency:    currency,
-		scale:       DefaultMoneyScale,
+		scale:       scale,
 	}
 }
 
@@ -350,4 +361,12 @@ func checkedMoneyMinorAmount(amount *big.Int) (int64, error) {
 	}
 
 	return amount.Int64(), nil
+}
+
+func moneyScaleForCurrency(currency Currency) int32 {
+	if scale, ok := currency.MinorUnitScale(); ok {
+		return scale
+	}
+
+	return DefaultMoneyScale
 }

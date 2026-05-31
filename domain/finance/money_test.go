@@ -88,6 +88,74 @@ func (s *MoneyTestSuite) TestItCanBuildNewMoneyWithExplicitScale() {
 	s.Equal(int32(0), money.Scale())
 }
 
+func (s *MoneyTestSuite) TestItCanInferScaleFromCurrencyMetadata() {
+	testCases := []struct {
+		name               string
+		amount             string
+		currency           string
+		expectedAmount     string
+		expectedMinorUnits int64
+		expectedScale      int32
+		expectedCurrency   string
+	}{
+		{
+			name:               "USD uses two decimal places",
+			amount:             "10.99",
+			currency:           "USD",
+			expectedAmount:     "10.99",
+			expectedMinorUnits: 1099,
+			expectedScale:      2,
+			expectedCurrency:   "USD",
+		},
+		{
+			name:               "JPY uses zero decimal places",
+			amount:             "1000",
+			currency:           "JPY",
+			expectedAmount:     "1000",
+			expectedMinorUnits: 1000,
+			expectedScale:      0,
+			expectedCurrency:   "JPY",
+		},
+		{
+			name:               "KWD uses three decimal places",
+			amount:             "10.999",
+			currency:           "KWD",
+			expectedAmount:     "10.999",
+			expectedMinorUnits: 10999,
+			expectedScale:      3,
+			expectedCurrency:   "KWD",
+		},
+		{
+			name:               "unknown valid currency falls back to default scale",
+			amount:             "10.99",
+			currency:           "ZZZ",
+			expectedAmount:     "10.99",
+			expectedMinorUnits: 1099,
+			expectedScale:      DefaultMoneyScale,
+			expectedCurrency:   "ZZZ",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(
+			tc.name, func() {
+				money, err := NewMoneyFromString(tc.amount, tc.currency)
+				s.NoError(err)
+				s.Equal(tc.expectedAmount, money.Amount().String())
+				s.Equal(tc.expectedMinorUnits, money.AmountMinorUnits())
+				s.Equal(tc.expectedScale, money.Scale())
+				s.Equal(tc.expectedCurrency, money.Currency().String())
+			},
+		)
+	}
+}
+
+func (s *MoneyTestSuite) TestItRejectsAmountsWithTooMuchPrecisionForInferredScale() {
+	_, err := NewMoneyFromString("1000.50", "JPY")
+	s.Error(err)
+	s.True(errors.Is(err, ErrInvalidMoneyAmountPrecision))
+}
+
 func (s *MoneyTestSuite) TestItFailsToBuildNewMoneyFromInvalidValues() {
 	testCases := []struct {
 		name          string

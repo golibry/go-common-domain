@@ -18,6 +18,8 @@ func main() {
 	rounded, _ := m1.DivideWithRounding(decimal.NewFromInt(3), f.RoundHalfUp)
 	eur, _ := f.NewCurrency("EUR")
 	minor, _ := f.NewMoneyFromMinorUnits(1099, eur, 2)
+	jpy, _ := f.NewMoneyFromString("1000", "JPY")
+	kwd, _ := f.NewMoneyFromString("10.999", "KWD")
 
 	vat, _ := f.NewPercentageRateFromString("19")
 	vatAmount, _ := vat.ApplyTo(m1)
@@ -31,6 +33,8 @@ func main() {
 	fmt.Println(prod.String())
 	fmt.Println(rounded.String())
 	fmt.Println(minor.String())
+	fmt.Println(jpy.String(), jpy.Scale())
+	fmt.Println(kwd.String(), kwd.Scale())
 	fmt.Println(vatAmount.String())
 	fmt.Println(gross.String())
 	fmt.Println(string(jsonValue))

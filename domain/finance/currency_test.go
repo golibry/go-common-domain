@@ -178,6 +178,53 @@ func (s *CurrencyTestSuite) TestString() {
 	s.Equal("USD", currency.String())
 }
 
+func (s *CurrencyTestSuite) TestMinorUnitScale() {
+	testCases := []struct {
+		name          string
+		currency      string
+		expectedScale int32
+		expectedFound bool
+	}{
+		{
+			name:          "USD has two decimal places",
+			currency:      "USD",
+			expectedScale: 2,
+			expectedFound: true,
+		},
+		{
+			name:          "JPY has zero decimal places",
+			currency:      "JPY",
+			expectedScale: 0,
+			expectedFound: true,
+		},
+		{
+			name:          "KWD has three decimal places",
+			currency:      "KWD",
+			expectedScale: 3,
+			expectedFound: true,
+		},
+		{
+			name:          "unknown but syntactically valid currency",
+			currency:      "ZZZ",
+			expectedScale: 0,
+			expectedFound: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(
+			tc.name, func() {
+				currency, err := NewCurrency(tc.currency)
+				s.NoError(err)
+
+				scale, found := currency.MinorUnitScale()
+				s.Equal(tc.expectedFound, found)
+				s.Equal(tc.expectedScale, scale)
+			},
+		)
+	}
+}
+
 func (s *CurrencyTestSuite) TestJSONSerialization() {
 	currency, _ := NewCurrency("usd")
 
