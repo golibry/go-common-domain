@@ -389,6 +389,18 @@ func (s *MoneyTestSuite) TestJSONSerialization() {
 	s.Equal("42.25", decoded.Amount().String())
 	s.Equal("GBP", decoded.Currency().String())
 
+	s.NoError(json.Unmarshal([]byte(`{"amount":"1000","currency":"jpy"}`), &decoded))
+	s.Equal("1000", decoded.Amount().String())
+	s.Equal("JPY", decoded.Currency().String())
+	s.Equal(int64(1000), decoded.AmountMinorUnits())
+	s.Equal(int32(0), decoded.Scale())
+
+	s.NoError(json.Unmarshal([]byte(`{"amount":"42.125","currency":"kwd"}`), &decoded))
+	s.Equal("42.125", decoded.Amount().String())
+	s.Equal("KWD", decoded.Currency().String())
+	s.Equal(int64(42125), decoded.AmountMinorUnits())
+	s.Equal(int32(3), decoded.Scale())
+
 	s.NoError(json.Unmarshal([]byte(`{"amount":"42.125","currency":"gbp","scale":3}`), &decoded))
 	s.Equal("42.125", decoded.Amount().String())
 	s.Equal(int64(42125), decoded.AmountMinorUnits())

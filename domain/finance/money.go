@@ -102,7 +102,7 @@ func NewMoneyFromStringWithScale(amountStr, currencyStr string, scale int32) (Mo
 }
 
 // ReconstituteMoney creates a new Money instance without validation.
-// Amounts are rounded half-up to the default scale before being stored as minor units.
+// Amounts are rounded half-up to the currency scale before being stored as minor units.
 func ReconstituteMoney(amount decimal.Decimal, currency Currency) Money {
 	scale := moneyScaleForCurrency(currency)
 	amount = amount.Round(scale)
@@ -191,7 +191,7 @@ func (m *Money) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	scale := DefaultMoneyScale
+	scale := moneyScaleForCurrency(raw.Currency)
 	if raw.Scale != nil {
 		scale = *raw.Scale
 	}
