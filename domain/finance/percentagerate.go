@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/golibry/go-common-domain/domain"
 	"github.com/shopspring/decimal"
@@ -157,7 +158,7 @@ func (r *PercentageRate) Scan(value any) error {
 		*r = rate
 		return nil
 	case string:
-		rate, err := NewPercentageRateFromString(v)
+		rate, err := newPercentageRateFromScannedBasisPoints(v)
 		if err != nil {
 			return err
 		}
@@ -165,7 +166,7 @@ func (r *PercentageRate) Scan(value any) error {
 		*r = rate
 		return nil
 	case []byte:
-		rate, err := NewPercentageRateFromString(string(v))
+		rate, err := newPercentageRateFromScannedBasisPoints(string(v))
 		if err != nil {
 			return err
 		}
@@ -175,6 +176,15 @@ func (r *PercentageRate) Scan(value any) error {
 	default:
 		return ErrInvalidPercentageRateScanValue
 	}
+}
+
+func newPercentageRateFromScannedBasisPoints(value string) (PercentageRate, error) {
+	basisPoints, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return PercentageRate{}, ErrInvalidPercentageRateScanValue
+	}
+
+	return NewPercentageRateFromBasisPoints(basisPoints)
 }
 
 // ApplyTo returns the money amount represented by this rate using half-up rounding.

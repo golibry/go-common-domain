@@ -177,13 +177,14 @@ func (s *PercentageRateTestSuite) TestDatabaseValueAndScan() {
 	s.NoError(scanned.Scan(int64(2000)))
 	s.Equal(int64(2000), scanned.BasisPoints())
 
-	s.NoError(scanned.Scan("20"))
+	s.NoError(scanned.Scan("2000"))
 	s.Equal(int64(2000), scanned.BasisPoints())
 
-	s.NoError(scanned.Scan([]byte("20")))
+	s.NoError(scanned.Scan([]byte("2000")))
 	s.Equal(int64(2000), scanned.BasisPoints())
 
 	s.Error(scanned.Scan(int64(-1)))
+	s.Error(scanned.Scan("20.5"))
 	s.Error(scanned.Scan(123))
 }
 
