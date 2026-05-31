@@ -13,10 +13,9 @@ func main() {
 	amount, _ := rate.ApplyTo(money)
 	total, _ := rate.AddTo(money)
 	discounted, _ := rate.SubtractFrom(money)
-	basisPoints, _ := rate.Value()
+	basisPoints := rate.BasisPoints()
 
-	var scanned f.PercentageRate
-	_ = scanned.Scan(basisPoints)
+	fromDB := f.ReconstitutePercentageRate(basisPoints)
 
 	fmt.Println(rate.BasisPoints())
 	fmt.Println(rate.Percent().String())
@@ -24,5 +23,5 @@ func main() {
 	fmt.Println(amount.String())
 	fmt.Println(total.String())
 	fmt.Println(discounted.String())
-	fmt.Println(scanned.String())
+	fmt.Println(fromDB.String())
 }

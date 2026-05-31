@@ -464,17 +464,6 @@ func (s *MoneyTestSuite) TestJSONSerializationFailsForInvalidValues() {
 	}
 }
 
-func (s *MoneyTestSuite) TestReconstitute() {
-	usd, _ := NewCurrency("USD")
-	amount := decimal.NewFromFloat(100.50)
-	money := ReconstituteMoney(amount, usd)
-
-	s.Equal("100.5", money.Amount().String())
-	s.Equal(int64(10050), money.AmountMinorUnits())
-	s.Equal("USD", money.Currency().String())
-	s.Equal(DefaultMoneyScale, money.Scale())
-}
-
 func (s *MoneyTestSuite) TestReconstituteFromDatabaseFields() {
 	currency := ReconstituteCurrency("USD")
 	money := ReconstituteMoneyFromMinorUnits(10050, currency, 2)
@@ -483,17 +472,14 @@ func (s *MoneyTestSuite) TestReconstituteFromDatabaseFields() {
 	s.Equal(int64(10050), money.AmountMinorUnits())
 	s.Equal("USD", money.Currency().String())
 	s.Equal(int32(2), money.Scale())
-}
 
-func (s *MoneyTestSuite) TestReconstituteRoundsToDefaultScale() {
-	usd, _ := NewCurrency("USD")
-	amount := decimal.RequireFromString("10.999")
+	jpy := ReconstituteCurrency("JPY")
+	wholeUnitMoney := ReconstituteMoneyFromMinorUnits(1000, jpy, 0)
 
-	money := ReconstituteMoney(amount, usd)
-
-	s.Equal("11", money.Amount().String())
-	s.Equal(int64(1100), money.AmountMinorUnits())
-	s.Equal(DefaultMoneyScale, money.Scale())
+	s.Equal("1000", wholeUnitMoney.Amount().String())
+	s.Equal(int64(1000), wholeUnitMoney.AmountMinorUnits())
+	s.Equal("JPY", wholeUnitMoney.Currency().String())
+	s.Equal(int32(0), wholeUnitMoney.Scale())
 }
 
 func (s *MoneyTestSuite) TestReconstituteFromMinorUnits() {

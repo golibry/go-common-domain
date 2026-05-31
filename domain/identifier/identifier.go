@@ -46,7 +46,7 @@ func NewIntIdentifierFromString(value string) (IntIdentifier, error) {
 	return NewIntIdentifier(parsed)
 }
 
-// ReconstituteIntIdentifier creates a new IntIdentifier instance without validation
+// ReconstituteIntIdentifier creates an IntIdentifier from a trusted persisted value.
 func ReconstituteIntIdentifier(value uint64) IntIdentifier {
 	return IntIdentifier{
 		value: value,
@@ -105,26 +105,6 @@ func (i *IntIdentifier) UnmarshalJSON(data []byte) error {
 	}
 
 	return i.UnmarshalText([]byte(raw.String()))
-}
-
-// Scan validates and normalizes a database value into an IntIdentifier.
-func (i *IntIdentifier) Scan(value any) error {
-	switch v := value.(type) {
-	case int64:
-		identifier, err := NewIntIdentifierFromInt(v)
-		if err != nil {
-			return err
-		}
-
-		*i = identifier
-		return nil
-	case string:
-		return i.UnmarshalText([]byte(v))
-	case []byte:
-		return i.UnmarshalText(v)
-	default:
-		return ErrInvalidIdentifier
-	}
 }
 
 // IsValidIntIdentifier validates an identifier (must be positive and non-zero)

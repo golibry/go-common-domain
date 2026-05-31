@@ -64,7 +64,7 @@ func NewFullName(firstName, middleName, lastName string) (FullName, error) {
 	}, nil
 }
 
-// ReconstituteFullName creates a new FullName instance without validation or normalization
+// ReconstituteFullName creates a FullName from trusted persisted fields.
 func ReconstituteFullName(firstName, middleName, lastName string) FullName {
 	return FullName{
 		firstName:  firstName,

@@ -353,18 +353,6 @@ func (s *EmailTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("invalid-email")))
 }
 
-func (s *EmailTestSuite) TestDatabaseScan() {
-	var email Email
-
-	s.NoError(email.Scan("USER@Example.COM"))
-	s.Equal("user@example.com", email.Value())
-
-	s.NoError(email.Scan([]byte("OTHER@Example.COM")))
-	s.Equal("other@example.com", email.Value())
-
-	s.Error(email.Scan(123))
-}
-
 func (s *EmailTestSuite) TestReconstitute() {
 	email := ReconstituteEmail("test@example.com")
 	s.Equal("test@example.com", email.Value())

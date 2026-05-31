@@ -37,7 +37,7 @@ func NewPhoneNumber(value string) (PhoneNumber, error) {
 	}, nil
 }
 
-// ReconstitutePhoneNumber creates a new PhoneNumber instance without validation or normalization
+// ReconstitutePhoneNumber creates a PhoneNumber from a trusted persisted value.
 func ReconstitutePhoneNumber(value string) PhoneNumber {
 	return PhoneNumber{
 		value: value,
@@ -87,18 +87,6 @@ func (p *PhoneNumber) UnmarshalJSON(data []byte) error {
 	}
 
 	return p.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into a PhoneNumber.
-func (p *PhoneNumber) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return p.UnmarshalText([]byte(v))
-	case []byte:
-		return p.UnmarshalText(v)
-	default:
-		return ErrInvalidPhoneNumberChars
-	}
 }
 
 // NormalizePhoneNumber normalizes a phone number by removing spaces, dashes, parentheses, and dots

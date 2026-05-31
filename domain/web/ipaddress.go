@@ -31,7 +31,7 @@ func NewIPAddress(value string) (IPAddress, error) {
 	}, nil
 }
 
-// ReconstituteIPAddress creates a new IPAddress instance without validation or normalization
+// ReconstituteIPAddress creates an IPAddress from a trusted persisted value.
 func ReconstituteIPAddress(value string) IPAddress {
 	return IPAddress{
 		value: value,
@@ -93,18 +93,6 @@ func (ip *IPAddress) UnmarshalJSON(data []byte) error {
 	}
 
 	return ip.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into an IPAddress.
-func (ip *IPAddress) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return ip.UnmarshalText([]byte(v))
-	case []byte:
-		return ip.UnmarshalText(v)
-	default:
-		return ErrInvalidIPAddress
-	}
 }
 
 // NormalizeIPAddress normalizes an IP address by trimming spaces and standardizing format

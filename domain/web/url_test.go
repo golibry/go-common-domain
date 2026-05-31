@@ -201,18 +201,6 @@ func (s *URLTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("example.com")))
 }
 
-func (s *URLTestSuite) TestDatabaseScan() {
-	var url URL
-
-	s.NoError(url.Scan(" https://example.com "))
-	s.Equal("https://example.com", url.Value())
-
-	s.NoError(url.Scan([]byte("https://example.com/path")))
-	s.Equal("https://example.com/path", url.Value())
-
-	s.Error(url.Scan(123))
-}
-
 func (s *URLTestSuite) TestReconstitute() {
 	url := ReconstituteURL("https://example.com")
 	s.Equal("https://example.com", url.Value())

@@ -20,9 +20,8 @@ func main() {
 	err := pwd.Verify("wrong")
 	fmt.Println(errors.Is(err, a.ErrPasswordVerifyFailed))
 
-	// Store and scan the bcrypt hash at database boundaries
-	dbValue, _ := pwd.Value()
-	var scanned a.Password
-	_ = scanned.Scan(dbValue)
-	fmt.Println(scanned.Verify("MySecure123!@") == nil)
+	// Store the bcrypt hash explicitly and reconstitute it from trusted persisted data
+	dbHash := pwd.HashedValue()
+	fromDB := a.ReconstitutePassword(dbHash)
+	fmt.Println(fromDB.Verify("MySecure123!@") == nil)
 }

@@ -45,7 +45,7 @@ func NewDomainName(value string) (DomainName, error) {
 	}, nil
 }
 
-// ReconstituteDomainName creates a new DomainName instance without validation or normalization
+// ReconstituteDomainName creates a DomainName from a trusted persisted value.
 func ReconstituteDomainName(value string) DomainName {
 	return DomainName{
 		value: value,
@@ -95,18 +95,6 @@ func (d *DomainName) UnmarshalJSON(data []byte) error {
 	}
 
 	return d.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into a DomainName.
-func (d *DomainName) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return d.UnmarshalText([]byte(v))
-	case []byte:
-		return d.UnmarshalText(v)
-	default:
-		return ErrInvalidDomainFormat
-	}
 }
 
 // NormalizeDomainName normalizes a domain name by converting to lowercase and trimming spaces

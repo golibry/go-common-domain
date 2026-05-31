@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"database/sql/driver"
 	"errors"
 	"strings"
 	"unicode"
@@ -42,8 +41,7 @@ var (
 	ErrPasswordSerializationUnsupported = domain.NewError(
 		"password does not support automatic serialization",
 	)
-	ErrInvalidPasswordScanValue = domain.NewError("password scan value must be a bcrypt hash string or bytes")
-	ErrInvalidPasswordHash      = domain.NewError("password hash is invalid")
+	ErrInvalidPasswordHash = domain.NewError("password hash is invalid")
 )
 
 // Password represents a secure password value object
@@ -67,8 +65,7 @@ func NewPassword(plaintext string) (Password, error) {
 	}, nil
 }
 
-// ReconstitutePassword creates a Password instance from a pre-hashed value without validation
-// This is used when loading passwords from storage
+// ReconstitutePassword creates a Password from a trusted persisted bcrypt hash.
 func ReconstitutePassword(hashedValue string) Password {
 	return Password{
 		hashedValue: hashedValue,
@@ -115,31 +112,6 @@ func (p Password) NeedsRehashWithCost(cost int) bool {
 	}
 
 	return currentCost < cost
-}
-
-// Value returns the hashed password for database storage.
-func (p Password) Value() (driver.Value, error) {
-	return p.hashedValue, nil
-}
-
-// Scan validates and reconstitutes a hashed password from database storage.
-func (p *Password) Scan(value any) error {
-	var hash string
-	switch v := value.(type) {
-	case string:
-		hash = v
-	case []byte:
-		hash = string(v)
-	default:
-		return ErrInvalidPasswordScanValue
-	}
-
-	if _, err := bcrypt.Cost([]byte(hash)); err != nil {
-		return ErrInvalidPasswordHash
-	}
-
-	*p = ReconstitutePassword(hash)
-	return nil
 }
 
 // Equals compares two Password objects for equality

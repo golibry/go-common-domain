@@ -163,31 +163,6 @@ func (s *PercentageRateTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("0.001")))
 }
 
-func (s *PercentageRateTestSuite) TestDatabaseValueAndScan() {
-	rate, _ := NewPercentageRateFromString("19.5")
-
-	value, err := rate.Value()
-	s.NoError(err)
-	s.Equal(int64(1950), value)
-
-	var scanned PercentageRate
-	s.NoError(scanned.Scan(value))
-	s.True(rate.Equals(scanned))
-
-	s.NoError(scanned.Scan(int64(2000)))
-	s.Equal(int64(2000), scanned.BasisPoints())
-
-	s.NoError(scanned.Scan("2000"))
-	s.Equal(int64(2000), scanned.BasisPoints())
-
-	s.NoError(scanned.Scan([]byte("2000")))
-	s.Equal(int64(2000), scanned.BasisPoints())
-
-	s.Error(scanned.Scan(int64(-1)))
-	s.Error(scanned.Scan("20.5"))
-	s.Error(scanned.Scan(123))
-}
-
 func (s *PercentageRateTestSuite) TestApplyToMoney() {
 	money, _ := NewMoneyFromString("100.00", "EUR")
 	rate, _ := NewPercentageRateFromString("19")

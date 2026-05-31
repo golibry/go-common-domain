@@ -13,13 +13,13 @@ go run ./_examples/auth/password
 
 Coverage by folder:
 
-- `auth/password`: password validation, verification, protected string output, and database hash scan/value.
+- `auth/password`: password validation, verification, protected string output, hash access, and reconstitution.
 - `domain/error`: wrapped domain errors and `errors.Is`.
-- `finance/currency`: currency normalization, minor-unit metadata, and database scan.
+- `finance/currency`: currency normalization, minor-unit metadata, and reconstitution.
 - `finance/money`: inferred currency scale, minor-unit money, arithmetic, rounding, JSON, relational reconstitution, and percentage rates.
-- `finance/percentagerate`: basis-point rates, money application, and canonical basis-point database scan/value.
+- `finance/percentagerate`: basis-point rates, money application, and basis-point reconstitution.
 - `geography/countrycode`: country-code normalization.
-- `identifier`: integer identifiers from numbers, strings, and database values.
+- `identifier`: integer identifiers from numbers, strings, and reconstituted persisted values.
 - `person/fullname`: multi-part names, JSON, and relational reconstitution.
 - `person/contact/phonenumber`: phone-number normalization.
 - `web/domainname`: domain-name normalization.

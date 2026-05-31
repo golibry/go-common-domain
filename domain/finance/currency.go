@@ -188,7 +188,7 @@ func NewCurrency(value string) (Currency, error) {
 	}, nil
 }
 
-// ReconstituteCurrency creates a new Currency instance without validation or normalization
+// ReconstituteCurrency creates a Currency from a trusted persisted value.
 func ReconstituteCurrency(value string) Currency {
 	return Currency{
 		value: value,
@@ -244,18 +244,6 @@ func (c *Currency) UnmarshalJSON(data []byte) error {
 	}
 
 	return c.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into a Currency.
-func (c *Currency) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return c.UnmarshalText([]byte(v))
-	case []byte:
-		return c.UnmarshalText(v)
-	default:
-		return ErrInvalidCurrency
-	}
 }
 
 // NormalizeCurrency normalizes a currency by trimming spaces and converting to uppercase

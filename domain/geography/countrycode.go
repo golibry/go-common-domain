@@ -31,7 +31,7 @@ func NewCountryCode(value string) (CountryCode, error) {
 	}, nil
 }
 
-// ReconstituteCountryCode creates a new CountryCode instance without validation or normalization
+// ReconstituteCountryCode creates a CountryCode from a trusted persisted value.
 func ReconstituteCountryCode(value string) CountryCode {
 	return CountryCode{
 		value: value,
@@ -81,18 +81,6 @@ func (c *CountryCode) UnmarshalJSON(data []byte) error {
 	}
 
 	return c.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into a CountryCode.
-func (c *CountryCode) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return c.UnmarshalText([]byte(v))
-	case []byte:
-		return c.UnmarshalText(v)
-	default:
-		return ErrInvalidCountryCode
-	}
 }
 
 // NormalizeCountryCode normalizes a country code by trimming spaces and converting to uppercase

@@ -1,11 +1,9 @@
 package finance
 
 import (
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strconv"
 
 	"github.com/golibry/go-common-domain/domain"
 	"github.com/shopspring/decimal"
@@ -20,7 +18,6 @@ var (
 	ErrInvalidPercentageRatePrecision  = domain.NewError("percentage rate has more precision than basis points allow")
 	ErrPercentageRateBasisPointsTooBig = domain.NewError("percentage rate basis points value is too large")
 	ErrInvalidRoundingMode             = domain.NewError("rounding mode is invalid")
-	ErrInvalidPercentageRateScanValue  = domain.NewError("percentage rate scan value must be integer basis points")
 )
 
 type RoundingMode int
@@ -70,7 +67,7 @@ func NewPercentageRateFromString(value string) (PercentageRate, error) {
 	return NewPercentageRateFromBasisPoints(raw.Int64())
 }
 
-// ReconstitutePercentageRate creates a PercentageRate without validation.
+// ReconstitutePercentageRate creates a PercentageRate from trusted persisted basis points.
 func ReconstitutePercentageRate(basisPoints int64) PercentageRate {
 	return PercentageRate{
 		basisPoints: basisPoints,
@@ -139,52 +136,6 @@ func (r *PercentageRate) UnmarshalJSON(data []byte) error {
 	}
 
 	return r.UnmarshalText([]byte(value))
-}
-
-// Value returns the canonical basis points for database storage.
-func (r PercentageRate) Value() (driver.Value, error) {
-	return r.basisPoints, nil
-}
-
-// Scan validates and normalizes a database value into a PercentageRate.
-func (r *PercentageRate) Scan(value any) error {
-	switch v := value.(type) {
-	case int64:
-		rate, err := NewPercentageRateFromBasisPoints(v)
-		if err != nil {
-			return err
-		}
-
-		*r = rate
-		return nil
-	case string:
-		rate, err := newPercentageRateFromScannedBasisPoints(v)
-		if err != nil {
-			return err
-		}
-
-		*r = rate
-		return nil
-	case []byte:
-		rate, err := newPercentageRateFromScannedBasisPoints(string(v))
-		if err != nil {
-			return err
-		}
-
-		*r = rate
-		return nil
-	default:
-		return ErrInvalidPercentageRateScanValue
-	}
-}
-
-func newPercentageRateFromScannedBasisPoints(value string) (PercentageRate, error) {
-	basisPoints, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return PercentageRate{}, ErrInvalidPercentageRateScanValue
-	}
-
-	return NewPercentageRateFromBasisPoints(basisPoints)
 }
 
 // ApplyTo returns the money amount represented by this rate using half-up rounding.

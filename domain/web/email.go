@@ -50,7 +50,7 @@ func NewEmail(value string) (Email, error) {
 	}, nil
 }
 
-// ReconstituteEmail creates a new Email instance without validation or normalization
+// ReconstituteEmail creates an Email from a trusted persisted value.
 func ReconstituteEmail(value string) Email {
 	return Email{
 		value: value,
@@ -118,18 +118,6 @@ func (e *Email) UnmarshalJSON(data []byte) error {
 	}
 
 	return e.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into an Email.
-func (e *Email) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return e.UnmarshalText([]byte(v))
-	case []byte:
-		return e.UnmarshalText(v)
-	default:
-		return ErrInvalidEmailFormat
-	}
 }
 
 // NormalizeEmail normalizes an email address by converting to lowercase and trimming spaces

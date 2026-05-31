@@ -32,7 +32,7 @@ func NewURL(value string) (URL, error) {
 	}, nil
 }
 
-// ReconstituteURL creates a new URL instance without validation or normalization.
+// ReconstituteURL creates a URL from a trusted persisted value.
 //
 // ReconstituteURL should only be used with values that were previously validated
 // and persisted by this package. Passing an arbitrary or invalid value may cause
@@ -49,7 +49,7 @@ func (u URL) Value() string {
 	return u.value
 }
 
-// String returns a string representation of the phone number
+// String returns a string representation of the URL
 func (p URL) String() string {
 	return p.value
 }
@@ -82,18 +82,6 @@ func (u *URL) UnmarshalJSON(data []byte) error {
 	}
 
 	return u.UnmarshalText([]byte(value))
-}
-
-// Scan validates and normalizes a database value into a URL.
-func (u *URL) Scan(value any) error {
-	switch v := value.(type) {
-	case string:
-		return u.UnmarshalText([]byte(v))
-	case []byte:
-		return u.UnmarshalText(v)
-	default:
-		return ErrInvalidURL
-	}
 }
 
 // Parsed returns the URL representation of the raw url string (value)
