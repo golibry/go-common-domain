@@ -206,6 +206,18 @@ func (s *CurrencyTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("EURO")))
 }
 
+func (s *CurrencyTestSuite) TestDatabaseScan() {
+	var currency Currency
+
+	s.NoError(currency.Scan("usd"))
+	s.Equal("USD", currency.Value())
+
+	s.NoError(currency.Scan([]byte("eur")))
+	s.Equal("EUR", currency.Value())
+
+	s.Error(currency.Scan(123))
+}
+
 func (s *CurrencyTestSuite) TestReconstitute() {
 	currency := ReconstituteCurrency("USD")
 	s.Equal("USD", currency.Value())

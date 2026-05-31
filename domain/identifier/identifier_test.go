@@ -234,6 +234,22 @@ func (s *IdentifierTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("abc")))
 }
 
+func (s *IdentifierTestSuite) TestDatabaseScan() {
+	var identifier IntIdentifier
+
+	s.NoError(identifier.Scan(int64(123)))
+	s.Equal(uint64(123), identifier.Value())
+
+	s.NoError(identifier.Scan("456"))
+	s.Equal(uint64(456), identifier.Value())
+
+	s.NoError(identifier.Scan([]byte("789")))
+	s.Equal(uint64(789), identifier.Value())
+
+	s.Error(identifier.Scan(int64(-1)))
+	s.Error(identifier.Scan(123))
+}
+
 func (s *IdentifierTestSuite) TestReconstitute() {
 	identifier := ReconstituteIntIdentifier(12345)
 	s.Equal(uint64(12345), identifier.Value())

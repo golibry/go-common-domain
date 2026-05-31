@@ -105,6 +105,18 @@ func (e *Email) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into an Email.
+func (e *Email) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return e.UnmarshalText([]byte(v))
+	case []byte:
+		return e.UnmarshalText(v)
+	default:
+		return ErrInvalidEmailFormat
+	}
+}
+
 // NormalizeEmail normalizes an email address by converting to lowercase and trimming spaces
 func NormalizeEmail(email string) (string, error) {
 	// Trim spaces from the beginning and end

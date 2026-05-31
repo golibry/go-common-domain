@@ -334,6 +334,18 @@ func (s *IPAddressTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("not.an.ip")))
 }
 
+func (s *IPAddressTestSuite) TestDatabaseScan() {
+	var ip IPAddress
+
+	s.NoError(ip.Scan("192.168.001.001"))
+	s.Equal("192.168.1.1", ip.Value())
+
+	s.NoError(ip.Scan([]byte("2001:0db8:0000:0000:0000:0000:0000:0001")))
+	s.Equal("2001:db8::1", ip.Value())
+
+	s.Error(ip.Scan(123))
+}
+
 func (s *IPAddressTestSuite) TestReconstitute() {
 	ip := ReconstituteIPAddress("192.168.1.1")
 	s.Equal("192.168.1.1", ip.Value())

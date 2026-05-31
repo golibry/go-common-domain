@@ -216,6 +216,18 @@ func (s *PhoneNumberTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("12")))
 }
 
+func (s *PhoneNumberTestSuite) TestDatabaseScan() {
+	var phoneNumber PhoneNumber
+
+	s.NoError(phoneNumber.Scan("+1 (234) 567-890"))
+	s.Equal("+1234567890", phoneNumber.Value())
+
+	s.NoError(phoneNumber.Scan([]byte("+1.234.567.890")))
+	s.Equal("+1234567890", phoneNumber.Value())
+
+	s.Error(phoneNumber.Scan(123))
+}
+
 func (s *PhoneNumberTestSuite) TestReconstitute() {
 	phoneNumber := ReconstitutePhoneNumber("+1234567890")
 	s.Equal("+1234567890", phoneNumber.Value())

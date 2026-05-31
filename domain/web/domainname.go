@@ -82,6 +82,18 @@ func (d *DomainName) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into a DomainName.
+func (d *DomainName) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return d.UnmarshalText([]byte(v))
+	case []byte:
+		return d.UnmarshalText(v)
+	default:
+		return ErrInvalidDomainFormat
+	}
+}
+
 // NormalizeDomainName normalizes a domain name by converting to lowercase and trimming spaces
 func NormalizeDomainName(domainName string) (string, error) {
 	// Trim spaces from the beginning and end

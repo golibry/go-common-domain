@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -18,6 +19,7 @@ var (
 	ErrInvalidPercentageRatePrecision  = domain.NewError("percentage rate has more precision than basis points allow")
 	ErrPercentageRateBasisPointsTooBig = domain.NewError("percentage rate basis points value is too large")
 	ErrInvalidRoundingMode             = domain.NewError("rounding mode is invalid")
+	ErrInvalidPercentageRateScanValue  = domain.NewError("percentage rate scan value must be integer basis points")
 )
 
 type RoundingMode int
@@ -132,6 +134,43 @@ func (r *PercentageRate) UnmarshalJSON(data []byte) error {
 	}
 
 	return r.UnmarshalText([]byte(value))
+}
+
+// Value returns the canonical basis points for database storage.
+func (r PercentageRate) Value() (driver.Value, error) {
+	return r.basisPoints, nil
+}
+
+// Scan validates and normalizes a database value into a PercentageRate.
+func (r *PercentageRate) Scan(value any) error {
+	switch v := value.(type) {
+	case int64:
+		rate, err := NewPercentageRateFromBasisPoints(v)
+		if err != nil {
+			return err
+		}
+
+		*r = rate
+		return nil
+	case string:
+		rate, err := NewPercentageRateFromString(v)
+		if err != nil {
+			return err
+		}
+
+		*r = rate
+		return nil
+	case []byte:
+		rate, err := NewPercentageRateFromString(string(v))
+		if err != nil {
+			return err
+		}
+
+		*r = rate
+		return nil
+	default:
+		return ErrInvalidPercentageRateScanValue
+	}
 }
 
 // ApplyTo returns the money amount represented by this rate using half-up rounding.

@@ -16,6 +16,8 @@ var (
 	ErrEmptyNamePart        = domain.NewError("name part cannot be empty")
 	ErrInvalidNamePartChars = domain.NewError("name part contains invalid characters; allowed: letters (Unicode), spaces, hyphens (-), apostrophes ('), and periods (.). Name parts cannot start or end with a hyphen, apostrophe, or period.")
 	ErrTooLongNamePart      = domain.NewError("name part is too long")
+	ErrMissingFirstName     = domain.NewError("first name is required")
+	ErrMissingLastName      = domain.NewError("last name is required")
 )
 
 type FullName struct {
@@ -115,6 +117,14 @@ func (f *FullName) UnmarshalJSON(data []byte) error {
 	var raw fullNameJSON
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
+	}
+
+	if strings.TrimSpace(raw.FirstName) == "" {
+		return ErrMissingFirstName
+	}
+
+	if strings.TrimSpace(raw.LastName) == "" {
+		return ErrMissingLastName
 	}
 
 	fullName, err := NewFullName(raw.FirstName, raw.MiddleName, raw.LastName)

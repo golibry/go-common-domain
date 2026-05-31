@@ -215,12 +215,12 @@ func (s *FullNameTestSuite) TestJSONSerializationFailsForInvalidValues() {
 		{
 			name:          "missing first name",
 			jsonData:      `{"lastName":"Doe"}`,
-			expectedError: ErrEmptyNamePart,
+			expectedError: ErrMissingFirstName,
 		},
 		{
 			name:          "missing last name",
 			jsonData:      `{"firstName":"John"}`,
-			expectedError: ErrEmptyNamePart,
+			expectedError: ErrMissingLastName,
 		},
 	}
 
@@ -247,4 +247,12 @@ func (s *FullNameTestSuite) TestReconstitute() {
 	s.Equal(firstname, fullName.FirstName())
 	s.Equal(middleName, fullName.MiddleName())
 	s.Equal(lastName, fullName.LastName())
+}
+
+func (s *FullNameTestSuite) TestReconstituteFromDatabaseFields() {
+	fullName := ReconstituteFullName("John", "F.", "Doe")
+
+	s.Equal("John", fullName.FirstName())
+	s.Equal("F.", fullName.MiddleName())
+	s.Equal("Doe", fullName.LastName())
 }

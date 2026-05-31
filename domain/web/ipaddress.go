@@ -80,6 +80,18 @@ func (ip *IPAddress) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into an IPAddress.
+func (ip *IPAddress) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return ip.UnmarshalText([]byte(v))
+	case []byte:
+		return ip.UnmarshalText(v)
+	default:
+		return ErrInvalidIPAddress
+	}
+}
+
 // NormalizeIPAddress normalizes an IP address by trimming spaces and standardizing format
 func NormalizeIPAddress(ipAddress string) (string, error) {
 	// Trim spaces from the beginning and end

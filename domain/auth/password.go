@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql/driver"
 	"errors"
 	"strings"
 	"unicode"
@@ -41,6 +42,8 @@ var (
 	ErrPasswordSerializationUnsupported = domain.NewError(
 		"password does not support automatic serialization",
 	)
+	ErrInvalidPasswordScanValue = domain.NewError("password scan value must be a bcrypt hash string or bytes")
+	ErrInvalidPasswordHash      = domain.NewError("password hash is invalid")
 )
 
 // Password represents a secure password value object
@@ -87,6 +90,31 @@ func (p Password) Verify(plaintext string) error {
 // HashedValue returns the hashed password value
 func (p Password) HashedValue() string {
 	return p.hashedValue
+}
+
+// Value returns the hashed password for database storage.
+func (p Password) Value() (driver.Value, error) {
+	return p.hashedValue, nil
+}
+
+// Scan validates and reconstitutes a hashed password from database storage.
+func (p *Password) Scan(value any) error {
+	var hash string
+	switch v := value.(type) {
+	case string:
+		hash = v
+	case []byte:
+		hash = string(v)
+	default:
+		return ErrInvalidPasswordScanValue
+	}
+
+	if _, err := bcrypt.Cost([]byte(hash)); err != nil {
+		return ErrInvalidPasswordHash
+	}
+
+	*p = ReconstitutePassword(hash)
+	return nil
 }
 
 // Equals compares two Password objects for equality

@@ -14,4 +14,8 @@ func main() {
 	// Recreate from string
 	j, _ := id.NewIntIdentifierFromString("42")
 	fmt.Println(i.Equals(j))
+
+	var scanned id.IntIdentifier
+	_ = scanned.Scan(int64(42))
+	fmt.Println(scanned.Value())
 }

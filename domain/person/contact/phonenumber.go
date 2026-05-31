@@ -74,6 +74,18 @@ func (p *PhoneNumber) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into a PhoneNumber.
+func (p *PhoneNumber) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return p.UnmarshalText([]byte(v))
+	case []byte:
+		return p.UnmarshalText(v)
+	default:
+		return ErrInvalidPhoneNumberChars
+	}
+}
+
 // NormalizePhoneNumber normalizes a phone number by removing spaces, dashes, parentheses, and dots
 func NormalizePhoneNumber(phoneNumber string) (string, error) {
 	// Trim spaces from the beginning and end

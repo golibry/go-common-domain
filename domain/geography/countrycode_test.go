@@ -201,6 +201,18 @@ func (s *CountryCodeTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("ROU")))
 }
 
+func (s *CountryCodeTestSuite) TestDatabaseScan() {
+	var countryCode CountryCode
+
+	s.NoError(countryCode.Scan("ro"))
+	s.Equal("RO", countryCode.Value())
+
+	s.NoError(countryCode.Scan([]byte("us")))
+	s.Equal("US", countryCode.Value())
+
+	s.Error(countryCode.Scan(123))
+}
+
 func (s *CountryCodeTestSuite) TestReconstitute() {
 	countryCode := ReconstituteCountryCode("US")
 	s.Equal("US", countryCode.Value())

@@ -19,6 +19,8 @@ var (
 	ErrInvalidMoneyScale           = domain.NewError("money scale must be between 0 and 18")
 	ErrInvalidMoneyAmountPrecision = domain.NewError("money amount has more precision than scale allows")
 	ErrMoneyAmountTooLarge         = domain.NewError("money amount is too large")
+	ErrMissingMoneyAmount          = domain.NewError("money amount is required")
+	ErrMissingMoneyCurrency        = domain.NewError("money currency is required")
 )
 
 type Money struct {
@@ -159,6 +161,14 @@ func (m *Money) UnmarshalJSON(data []byte) error {
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
+	}
+
+	if len(raw.Amount) == 0 {
+		return ErrMissingMoneyAmount
+	}
+
+	if raw.Currency.String() == "" {
+		return ErrMissingMoneyCurrency
 	}
 
 	amount, err := decodeMoneyAmount(raw.Amount)

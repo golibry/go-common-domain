@@ -68,6 +68,18 @@ func (c *Currency) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into a Currency.
+func (c *Currency) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return c.UnmarshalText([]byte(v))
+	case []byte:
+		return c.UnmarshalText(v)
+	default:
+		return ErrInvalidCurrency
+	}
+}
+
 // NormalizeCurrency normalizes a currency by trimming spaces and converting to uppercase
 func NormalizeCurrency(currency string) (string, error) {
 	// Trim spaces and convert to uppercase

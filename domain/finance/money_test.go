@@ -350,12 +350,12 @@ func (s *MoneyTestSuite) TestJSONSerializationFailsForInvalidValues() {
 		{
 			name:          "missing amount",
 			jsonData:      `{"currency":"USD"}`,
-			expectedError: nil,
+			expectedError: ErrMissingMoneyAmount,
 		},
 		{
 			name:          "missing currency",
 			jsonData:      `{"amount":"1"}`,
-			expectedError: ErrEmptyCurrency,
+			expectedError: ErrMissingMoneyCurrency,
 		},
 	}
 
@@ -381,7 +381,17 @@ func (s *MoneyTestSuite) TestReconstitute() {
 	s.Equal("100.5", money.Amount().String())
 	s.Equal(int64(10050), money.AmountMinorUnits())
 	s.Equal("USD", money.Currency().String())
-	s.Equal(int32(DefaultMoneyScale), money.Scale())
+	s.Equal(DefaultMoneyScale, money.Scale())
+}
+
+func (s *MoneyTestSuite) TestReconstituteFromDatabaseFields() {
+	currency := ReconstituteCurrency("USD")
+	money := ReconstituteMoneyFromMinorUnits(10050, currency, 2)
+
+	s.Equal("100.5", money.Amount().String())
+	s.Equal(int64(10050), money.AmountMinorUnits())
+	s.Equal("USD", money.Currency().String())
+	s.Equal(int32(2), money.Scale())
 }
 
 func (s *MoneyTestSuite) TestReconstituteRoundsToDefaultScale() {
@@ -392,7 +402,7 @@ func (s *MoneyTestSuite) TestReconstituteRoundsToDefaultScale() {
 
 	s.Equal("11", money.Amount().String())
 	s.Equal(int64(1100), money.AmountMinorUnits())
-	s.Equal(int32(DefaultMoneyScale), money.Scale())
+	s.Equal(DefaultMoneyScale, money.Scale())
 }
 
 func (s *MoneyTestSuite) TestReconstituteFromMinorUnits() {

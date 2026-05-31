@@ -262,6 +262,18 @@ func (s *DomainNameTestSuite) TestTextSerialization() {
 	s.Error(decoded.UnmarshalText([]byte("invalid..domain")))
 }
 
+func (s *DomainNameTestSuite) TestDatabaseScan() {
+	var domain DomainName
+
+	s.NoError(domain.Scan("EXAMPLE.COM"))
+	s.Equal("example.com", domain.Value())
+
+	s.NoError(domain.Scan([]byte("API.Example.COM")))
+	s.Equal("api.example.com", domain.Value())
+
+	s.Error(domain.Scan(123))
+}
+
 func (s *DomainNameTestSuite) TestReconstitute() {
 	// Test that reconstitute bypasses validation
 	domain := ReconstituteDomainName("invalid..domain")

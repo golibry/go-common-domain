@@ -220,6 +220,27 @@ func (s *PasswordTestSuite) TestPasswordEquals() {
 	s.True(password1.Equals(reconstituted))
 }
 
+func (s *PasswordTestSuite) TestDatabaseValueAndScan() {
+	plaintext := "MySecure123!@"
+	password, err := NewPassword(plaintext)
+	s.NoError(err)
+
+	value, err := password.Value()
+	s.NoError(err)
+	s.Equal(password.HashedValue(), value)
+
+	var scanned Password
+	s.NoError(scanned.Scan(value))
+	s.True(password.Equals(scanned))
+	s.NoError(scanned.Verify(plaintext))
+
+	s.NoError(scanned.Scan([]byte(password.HashedValue())))
+	s.True(password.Equals(scanned))
+
+	s.Error(scanned.Scan("not-a-bcrypt-hash"))
+	s.Error(scanned.Scan(123))
+}
+
 func (s *PasswordTestSuite) TestPasswordString() {
 	password, err := NewPassword("MySecure123!@")
 	s.NoError(err)

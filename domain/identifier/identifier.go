@@ -103,6 +103,26 @@ func (i *IntIdentifier) UnmarshalJSON(data []byte) error {
 	return i.UnmarshalText([]byte(raw.String()))
 }
 
+// Scan validates and normalizes a database value into an IntIdentifier.
+func (i *IntIdentifier) Scan(value any) error {
+	switch v := value.(type) {
+	case int64:
+		identifier, err := NewIntIdentifierFromInt(v)
+		if err != nil {
+			return err
+		}
+
+		*i = identifier
+		return nil
+	case string:
+		return i.UnmarshalText([]byte(v))
+	case []byte:
+		return i.UnmarshalText(v)
+	default:
+		return ErrInvalidIdentifier
+	}
+}
+
 // IsValidIntIdentifier validates an identifier (must be positive and non-zero)
 func IsValidIntIdentifier(value uint64) error {
 	if value == 0 {

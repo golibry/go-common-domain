@@ -69,6 +69,18 @@ func (u *URL) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into a URL.
+func (u *URL) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return u.UnmarshalText([]byte(v))
+	case []byte:
+		return u.UnmarshalText(v)
+	default:
+		return ErrInvalidURL
+	}
+}
+
 // Parsed returns the URL representation of the raw url string (value)
 func (u URL) Parsed() url.URL {
 	parsed, _ := url.Parse(u.value)

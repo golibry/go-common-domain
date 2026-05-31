@@ -68,6 +68,18 @@ func (c *CountryCode) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Scan validates and normalizes a database value into a CountryCode.
+func (c *CountryCode) Scan(value any) error {
+	switch v := value.(type) {
+	case string:
+		return c.UnmarshalText([]byte(v))
+	case []byte:
+		return c.UnmarshalText(v)
+	default:
+		return ErrInvalidCountryCode
+	}
+}
+
 // NormalizeCountryCode normalizes a country code by trimming spaces and converting to uppercase
 func NormalizeCountryCode(countryCode string) (string, error) {
 	// Trim spaces and convert to uppercase

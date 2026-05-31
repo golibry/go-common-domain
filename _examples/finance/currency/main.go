@@ -8,5 +8,9 @@ import (
 
 func main() {
 	cur, _ := f.NewCurrency(" usd ")
+	var scanned f.Currency
+	_ = scanned.Scan([]byte(" eur "))
+
 	fmt.Println(cur.Value())
+	fmt.Println(scanned.Value())
 }
